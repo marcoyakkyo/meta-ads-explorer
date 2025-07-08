@@ -86,6 +86,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 videoUrl: msg.videoUrl || null, // optional video URL
                 imgUrl: msg.imgUrl || null, // optional image URL
                 query_params: msg.query_params || {},
+                full_html_text: msg.full_text || '', // optional full text of the ad
                 tags: msg.tags || [] // optional tags array
             };
 

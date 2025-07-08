@@ -394,6 +394,7 @@ async function insertSaveButtons() {
                         videoUrl: card.videoUrl || null, // Use video URL if found, otherwise null
                         imgUrl: card.imgUrl || null, // Use image URL if found, otherwise null
                         query_params: queryParams,
+                        full_text: card.element.textContent || '', // Include full text of the ad
                         tags: card.tags || [] // Include current tags when saving
                     },
                     response => {
