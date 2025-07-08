@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>FB Ad Saver Options</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .success-message {
+            color: #4CAF50;
+            margin-top: 10px;
+        }
+        .error-message {
+            color: #d32f2f;
+            margin-top: 10px;
+        }
+        .info-section {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-left: 4px solid #4CAF50;
+            margin-top: 20px;
+        }
+        .info-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info-section p {
+            margin-bottom: 8px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>FB Ad Saver Configuration</h1>
+    
+    <div class="section">
+        <h2>API Configuration</h2>
+        <label for="token">
+            API Token:
+            <input id="token" type="text" placeholder="Enter your API token"/>
+        </label>
+        <button id="save">Save Token</button>
+        <div id="token-status"></div>
+    </div>
+
+    <div class="info-section">
+        <h3>How to Use</h3>
+        <p><strong>1. Configure API Token:</strong> Enter your API token above and click "Save Token"</p>
+        <p><strong>2. Visit Facebook Ad Library:</strong> Go to https://www.facebook.com/ads/library/</p>
+        <p><strong>3. Manage Tags:</strong> Use the tag dropdowns next to each ad to add, remove, or select tags</p>
+        <p><strong>4. Save Ads:</strong> Click "Save ad" to save ads with their selected tags</p>
+        <p><strong>Note:</strong> Tag management is now handled directly in the Facebook Ad Library interface for easier access.</p>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+</html>
