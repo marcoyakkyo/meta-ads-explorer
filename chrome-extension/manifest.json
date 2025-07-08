@@ -5,7 +5,8 @@
   "description": "Inject Save buttons into Facebook Ad Library",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "scripting"
   ],
   "options_ui": {
     "page": "options.html",
@@ -13,6 +14,7 @@
   },
   "host_permissions": [
     "https://www.facebook.com/ads/library/*",
+    "https://www.facebook.com/api/graphql/*",
     "https://mcp-test.yakkyo.com/meta-ads/*"
   ],
   "background": {
@@ -20,8 +22,15 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.facebook.com/ads/library/*"],
-      "js": ["content.js"]
+      "matches":  ["*://*.facebook.com/ads/library/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches":  ["*://*.facebook.com/*"],
+      "js": ["inject.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
     }
   ]
 }
