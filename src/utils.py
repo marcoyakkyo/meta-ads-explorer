@@ -60,7 +60,7 @@ def add_new_tag_to_ad(ad_archive_id: str, new_tag: str, current_tags: list):
 
 def show_ads(ads: list, num_cols: int = 3):
 
-    st.write("### Ads Data")
+    st.write("### Saved Ads Overview")
 
     cols = st.columns(num_cols)
 
@@ -70,12 +70,17 @@ def show_ads(ads: list, num_cols: int = 3):
         with col:
             col.write(f"[Ad ID: {ad['ad_archive_id']}](https://www.facebook.com/ads/library/?id={ad['ad_archive_id']})")
 
+            # ad with video
             if ad.get("video_url"):
                 col.write(f"[Video URL]({ad['video_url']})")
                 if ad.get("poster_url"):
-                    col.image(ad.get("poster_url", ""), use_container_width=True, caption="Ad Poster")
+                    col.image(ad["poster_url"], use_container_width=True, caption="Ad Video Preview")
+                else:
+                    col.write("No poster image available for this video ad.")
+            # ad with image
             elif ad.get("img_url"):
-                col.image(ad.get("img_url"), use_container_width=True, caption="Ad Image")
+                col.image(ad["img_url"], use_container_width=True, caption="Ad Image")
+            # no image or video
             else:
                 col.write("No image or video available for this ad.")
 
