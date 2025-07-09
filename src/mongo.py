@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from datetime import datetime
 import streamlit as st
 
 client = MongoClient(st.secrets["MONGO_DB_URL"])[st.secrets["MONGO_DB_NAME"]]
@@ -78,5 +79,22 @@ def get_competitors() -> list:
         {"competitor_id_page": {"$exists": True}},
         {"_id": 0, "page_name": 1, "competitor_id_page": 1}
     ))
+
+
+def update_ad_tags(ad_archive_id: str, new_tags: list) -> bool:
+    """
+    Update tags for a specific ad in the database.
+    Returns True if successful, False otherwise.
+    """
+    try:
+        client["gigi_ads_saved"].update_one(
+            {"ad_archive_id": ad_archive_id},
+            {"$set": {"tags": new_tags, "updated_at": datetime.now()}}  # MongoDB will auto-set current date
+        )
+        print(f"Updated tags for ad {ad_archive_id}: {new_tags}")
+        return True
+    except Exception as e:
+        print(f"Error updating ad tags: {str(e)}")
+        return False
 
 
