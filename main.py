@@ -1,8 +1,10 @@
 import streamlit as st
+from time import sleep
+
 from src import auth, utils, config, mongo
 
-PAGE_SIZE = 2
-NUM_COLUMNS = 5
+PAGE_SIZE = 9
+NUM_COLUMNS = 3
 
 # ---------------------------- AUTH CHECKS ----------------------------
 if config.IS_DEBUG:
@@ -15,23 +17,27 @@ elif not auth.check_password():
     st.stop()  # Do not continue if check_password is not True.
 
 
+def init_data():
+    st.session_state["existing_tags"] = mongo.get_tags()
+    st.session_state["selected_tags"] = []
+
+    st.session_state["ads_data"] = mongo.get_ads(last_fetched_ad_id=None, limit=PAGE_SIZE)
+    st.session_state["last_id"] = st.session_state["ads_data"][-1]["_id"] if st.session_state["ads_data"] else None
+
+    st.session_state["competitors"] = mongo.get_competitors()
+    st.session_state["competitors"] = {str(c["competitor_id_page"]): c["page_name"] for c in st.session_state["competitors"]}
+
 # ---------------------------- APP INTERFACE ----------------------------
 st.title("FB Ads Meta - Saved Ads")
 
-
-# ---------------------------- LOAD DATA ----------------------------
+# ---------------------------- INIT DATA ----------------------------
 if "ads_data" not in st.session_state:
-    st.session_state["ads_data"] = mongo.get_ads(last_fetched_ad_id=None, limit=PAGE_SIZE)
-    st.session_state['last_id'] = st.session_state["ads_data"][-1]["_id"] if st.session_state["ads_data"] else None
-
-if "competitors" not in st.session_state:
-    st.session_state["competitors"] = mongo.get_competitors()
-    st.session_state["competitors"] = {str(c['competitor_id_page']): c['page_name'] for c in st.session_state["competitors"]}
+    init_data()
+    st.success("Ads data initialized successfully!")
 
 # ---------------------------- Button update ----------------------------
 if st.button("REFRESH Ads Data"):
-    st.session_state["ads_data"] = mongo.get_ads(last_fetched_ad_id=None, limit=PAGE_SIZE)
-    st.session_state['last_id'] = st.session_state["ads_data"][-1]["_id"] if st.session_state["ads_data"] else None
+    init_data()
     st.success("Ads data updated successfully!")
 
 # ---------------------------- DISPLAY ADS ----------------------------
@@ -39,6 +45,7 @@ if st.button("REFRESH Ads Data"):
 if not st.session_state["ads_data"]:
     st.warning("No ads data available. Please refresh or check your database connection.")
     st.stop()
+
 
 
 # Display ads in a table format
@@ -50,12 +57,15 @@ with ads_container:
 # Always show the Load More button at the bottom
 if st.button("LOAD MORE ADS", key="load_more_button"):
 
-    new_ads = mongo.get_ads(last_fetched_ad_id=st.session_state['last_id'], limit=PAGE_SIZE)
+    new_ads = mongo.get_ads(
+        last_fetched_ad_id=st.session_state['last_id'], 
+        limit=PAGE_SIZE,
+        tags=st.session_state["selected_tags"]  # Apply current tag filter
+    )
 
     if new_ads:
         # Extend the existing ads data with new ads
         st.session_state["ads_data"].extend(new_ads)
-        # Update the last fetched ad ID
         st.session_state['last_id'] = new_ads[-1]["_id"]
 
         st.success(f"Loaded {len(new_ads)} more ads.")
@@ -63,8 +73,73 @@ if st.button("LOAD MORE ADS", key="load_more_button"):
         # Add only the new ads to the container (append, don't replace)
         with ads_container:
             utils.show_ads(new_ads, num_cols=NUM_COLUMNS)
+
     else:
-        st.info("No more ads to load.")
+        if st.session_state["selected_tags"]:
+            st.info("No more ads found with the selected tags.")
+        else:
+            st.info("No more ads to load.")
+
 
 # Display current count of ads
 st.sidebar.info(f"Currently displaying {len(st.session_state['ads_data'])} ads")
+
+# ---------------------------- TAG FILTERING SECTION ----------------------------
+st.sidebar.header("🏷️ Filter by Tags")
+
+# Multiselect for tag filtering
+selected_tags = st.sidebar.multiselect(
+    "Select tags to filter ads:",
+    options=st.session_state["existing_tags"],
+    default=st.session_state["selected_tags"],
+    key="tag_filter"
+)
+
+# Apply filter button
+if st.sidebar.button("Apply Tag Filter", key="apply_filter") and selected_tags:
+    # Update selected tags in session state
+    st.session_state["selected_tags"] = selected_tags
+    
+    # Fetch filtered ads
+    st.session_state["ads_data"] = mongo.get_ads(
+        last_fetched_ad_id=None, 
+        limit=PAGE_SIZE, 
+        tags=st.session_state["selected_tags"]
+    )
+    st.session_state['last_id'] = st.session_state["ads_data"][-1]["_id"] if st.session_state["ads_data"] else None
+
+    st.sidebar.success(f"Filtered by {len(st.session_state['selected_tags'])} tag(s)")
+    st.rerun()  # Rerun to refresh the display
+
+# Clear filter button
+if st.sidebar.button("Clear Filter", key="clear_filter"):
+    st.session_state["selected_tags"] = []
+    st.session_state["ads_data"] = mongo.get_ads(last_fetched_ad_id=None, limit=PAGE_SIZE, tags=[])
+    st.session_state['last_id'] = st.session_state["ads_data"][-1]["_id"] if st.session_state["ads_data"] else None
+    st.sidebar.success("Filter cleared - showing all ads")
+    st.rerun()  # Rerun to refresh the display
+
+# Show current filter status
+if st.session_state["selected_tags"]:
+    st.sidebar.write("**Current filter:**")
+    for tag in st.session_state["selected_tags"]:
+        st.sidebar.write(f"• {tag}")
+else:
+    st.sidebar.write("**No filter applied** - showing all ads")
+
+
+# js = '''
+# <script>
+#     var body = window.parent.document.querySelector(".main");
+#     console.log(body);
+#     body.scrollTop = 0;
+# </script>
+# '''
+# import streamlit.components.v1 as components
+
+# if st.button("Back to top"):
+#     temp = st.empty()
+#     with temp:
+#         components.html(js)
+#         sleep(1) # To make sure the script can execute before being deleted
+#     temp.empty()

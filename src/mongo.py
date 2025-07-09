@@ -26,7 +26,7 @@ client = MongoClient(st.secrets["MONGO_DB_URL"])[st.secrets["MONGO_DB_NAME"]]
 #   }
 # }
 
-def get_ads(last_fetched_ad_id: ObjectId=None, limit: int=20):
+def get_ads(last_fetched_ad_id: ObjectId=None, tags: list=[], limit: int=20):
     """
     Fetch ads from the MongoDB collection.
     If last_fetched_ad_id is provided, fetch ads after that ID.
@@ -34,6 +34,8 @@ def get_ads(last_fetched_ad_id: ObjectId=None, limit: int=20):
     query = {}
     if last_fetched_ad_id:
         query["_id"] = {"$lt": ObjectId(last_fetched_ad_id)}
+    if tags:
+        query["tags"] = {"$in": tags}
 
     fields = {
         'ad_archive_id': 1,
@@ -57,8 +59,24 @@ def get_ads(last_fetched_ad_id: ObjectId=None, limit: int=20):
     return ads
 
 
+def get_tags() -> list:
+    """
+    Fetch all unique tags from the ads collection.
+    """
+    tags = client["gigi_ads_saved"].aggregate([
+        {"$unwind": "$tags"},
+        {"$group": {"_id": "$tags"}},
+        {"$project": {"tag": "$_id"}}
+    ])
+    tags = [tag["tag"] for tag in tags]
+    print(f"Fetched {len(tags)} unique tags from MongoDB.")
+    return list(set(tags))  # Return unique tags
+
+
 def get_competitors() -> list:
     return list(client["facebook_competitors"].find(
         {"competitor_id_page": {"$exists": True}},
         {"_id": 0, "page_name": 1, "competitor_id_page": 1}
     ))
+
+
