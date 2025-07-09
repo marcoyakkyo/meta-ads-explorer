@@ -18,13 +18,11 @@ window.addEventListener('message', (event) => {
                     type: 'GRAPHQL_RESPONSE',
                     data: event.data.data
                 });
-
                 // “Reply” by posting back to the same window
-                window.postMessage({
+                event.source.postMessage({
                     type: 'GRAPHQL_RESPONSE_COMPLETED',
                     correlationId: event.data.correlationId
-                }, "*");
-
+                }, event.origin);
             } else {
                 console.error('Background script is not responding');
                 return;
@@ -32,6 +30,7 @@ window.addEventListener('message', (event) => {
         });
     }
 });
+
 
 async function findImgSrc(adCardElement, targetAdId) {
   // find the tag img and get its src attribute if exists
@@ -68,7 +67,6 @@ async function findImgSrc(adCardElement, targetAdId) {
     //   console.log('Found image URL via regex parsing:', srcMatch[1]);
       return srcMatch[1];
     }
-    
     return null;
   }
   // Wait a bit for dynamic content to load
@@ -85,24 +83,26 @@ async function findImgSrc(adCardElement, targetAdId) {
   let currentElement = adCardElement;
   while (currentElement && currentElement !== document.body) {
     const libraryIdMatches = currentElement.textContent.match(/Library ID:\s+\d+/g) || currentElement.textContent.match(/ID libreria:\s+\d+/g);
-    
+
     if (libraryIdMatches && libraryIdMatches.length > 1) {
       break;
     } else if (libraryIdMatches && libraryIdMatches.length === 1 && !libraryIdMatches[0].includes(targetAdId)) {
       break;
     } else if (libraryIdMatches && libraryIdMatches.length === 1 && libraryIdMatches[0].includes(targetAdId)) {
-      const imgElement = currentElement.querySelector('img');
-      if (imgElement) {
+
+        // fetch all img and take the last 
+      const imgElement = currentElement.querySelectorAll('img');
+      if (imgElement && imgElement.length > 0) {
         // console.log('Found image element:', imgElement);
-        
+
         // Try to extract URL immediately
-        const immediateUrl = extractImgSrc(imgElement);
+        const immediateUrl = extractImgSrc(imgElement[imgElement.length - 1]);
         if (immediateUrl) {
           return immediateUrl;
         }
-        
+
         // If immediate extraction fails, wait and try again
-        return await waitAndExtract(imgElement);
+        return await waitAndExtract([imgElement.length - 1]);
       }
     }
     
@@ -117,23 +117,25 @@ async function findVideoSrc(adCardElement, targetAdId) {
   function extractVideoUrl(videoElement) {
     if (!videoElement) return null;
     
+    let posterUrl = videoElement.poster || videoElement.getAttribute('poster') || null;
+  
     // Method 1: Try direct property access
     if (videoElement.src) {
     //   console.log('Found video URL via .src property:', videoElement.src);
-      return videoElement.src;
+      return {videoUrl:  videoElement.src, posterUrl: posterUrl};
     }
-    
+
     // Method 2: Try getAttribute
     const srcAttr = videoElement.getAttribute('src');
     if (srcAttr) {
     //   console.log('Found video URL via getAttribute:', srcAttr);
-      return srcAttr;
+      return { posterUrl: posterUrl, videoUrl: srcAttr};
     }
-    
+
     // Method 3: Try currentSrc (for actively playing videos)
     if (videoElement.currentSrc) {
     //   console.log('Found video URL via .currentSrc:', videoElement.currentSrc);
-      return videoElement.currentSrc;
+      return {videoUrl: videoElement.currentSrc, posterUrl: posterUrl};
     }
     
     // Method 4: Check all attributes manually
@@ -141,7 +143,7 @@ async function findVideoSrc(adCardElement, targetAdId) {
     for (let i = 0; i < attributes.length; i++) {
       if (attributes[i].name === 'src') {
         // console.log('Found video URL via attributes collection:', attributes[i].value);
-        return attributes[i].value;
+        return {posterUrl: posterUrl, videoUrl: attributes[i].value};
       }
     }
     
@@ -151,7 +153,7 @@ async function findVideoSrc(adCardElement, targetAdId) {
     const srcMatch = outerHTML.match(/src=["']([^"']+)["']/);
     if (srcMatch && srcMatch[1]) {
     //   console.log('Found video URL via regex parsing:', srcMatch[1]);
-      return srcMatch[1];
+      return {posterUrl: posterUrl, videoUrl: srcMatch[1]};
     }
     
     // Method 6: Check if video has source children
@@ -160,18 +162,17 @@ async function findVideoSrc(adCardElement, targetAdId) {
       const sourceUrl = sourceElements[0].src || sourceElements[0].getAttribute('src');
       if (sourceUrl) {
         // console.log('Found video URL via source element:', sourceUrl);
-        return sourceUrl;
+        return {posterUrl: posterUrl, videoUrl: sourceUrl};
       }
     }
-    
     return null;
   }
   
   // Wait a bit for dynamic content to load
   async function waitAndExtract(videoElement, attempts = 0) {
-    const url = extractVideoUrl(videoElement);
-    if (url || attempts >= 5) {
-      return url;
+    const results = extractVideoUrl(videoElement);
+    if (results || attempts >= 5) {
+      return results;
     } else {
       await new Promise(resolve => setTimeout(resolve, 200));
       return waitAndExtract(videoElement, attempts + 1);
@@ -191,23 +192,21 @@ async function findVideoSrc(adCardElement, targetAdId) {
       const videoElement = currentElement.querySelector('video');
       if (videoElement) {
         // console.log('Found video element:', videoElement);
-        
-        // Try to extract URL immediately
+
         const immediateUrl = extractVideoUrl(videoElement);
-        if (immediateUrl) {
+        if (immediateUrl && immediateUrl.videoUrl) {
           return immediateUrl;
         }
-        
+
         // If immediate extraction fails, wait and try again
         return await waitAndExtract(videoElement);
       }
     }
-    
     currentElement = currentElement.parentElement;
   }
-  
   return null;
 }
+
 
 // we need to find ad cards by first finding buttons with 'See ad details' or 'See summary details', then going up to find Library ID
 async function findAdCards(adCards = []) {
@@ -250,8 +249,8 @@ async function findAdCards(adCards = []) {
         if (!existingAd) {
         //   console.log(`📝 Processing new ad: ${adId}`);
 
-          let videoUrl = await findVideoSrc(adCardElement, adId);
-          if (!videoUrl) {
+          let video_stuff = await findVideoSrc(adCardElement, adId);
+          if (!video_stuff || !video_stuff.videoUrl) {
             imgUrl = await findImgSrc(adCardElement, adId);
             // console.log(`🖼️ Image URL for ad ${adId}:`, imgUrl || 'None found');
           }
@@ -265,8 +264,9 @@ async function findAdCards(adCards = []) {
           if (imgUrl) {
             obj.imgUrl = imgUrl;
           } // Add imgUrl if found
-          if (videoUrl) {
-            obj.videoUrl = videoUrl; // Use video URL if found, otherwise null
+          if (video_stuff) {
+            obj.videoUrl = video_stuff.videoUrl; // Use video URL if found, otherwise null
+            obj.posterUrl = video_stuff.posterUrl; // Use video URL if found, otherwise null
           }
           adCards.push(obj);
         }
@@ -275,7 +275,6 @@ async function findAdCards(adCards = []) {
       }
     }
   }
-  
 //   console.log(`📊 findAdCards summary: Found ${targetButtons} target buttons, ${adCards.length} total ad cards`);
   return adCards;
 }
@@ -392,6 +391,7 @@ async function insertSaveButtons() {
                         type: 'SAVE_AD',
                         adId: card.adId,
                         videoUrl: card.videoUrl || null, // Use video URL if found, otherwise null
+                        posterUrl: card.posterUrl || null, // Use poster URL if found, otherwise null
                         imgUrl: card.imgUrl || null, // Use image URL if found, otherwise null
                         query_params: queryParams,
                         full_text: card.element.textContent || '', // Include full text of the ad
@@ -427,19 +427,13 @@ async function insertSaveButtons() {
                     });
             }
         };
-
-        // console.log(`✅ Adding UI elements to ad ${card.adId}`);
-        // console.log(`📍 Target element:`, card.element);
-        
         try {
             card.element.appendChild(card.tagDropdown);
             card.element.appendChild(card.btn);
-            // console.log(`🎉 Successfully added tag dropdown and save button to ad ${card.adId}`);
         } catch (error) {
             // console.error(`❌ Failed to add elements to ad ${card.adId}:`, error);
         }
     });
-    
     // console.log(`🏁 insertSaveButtons completed for ${adCards.length} ads`);
 }
 
@@ -558,9 +552,11 @@ function createTagDropdown(card) {
                     type: 'SAVE_AD',
                     adId: card.adId,
                     videoUrl: card.videoUrl || null, // Use video URL if found, otherwise null
+                    posterUrl: card.posterUrl || null, // Use poster URL if found, otherwise null
                     imgUrl: card.imgUrl || null, // Use image URL if found, otherwise null
                     query_params: queryParams,
-                    tags: card.tags
+                    full_text: card.element.textContent || '', // Include full text of the ad
+                    tags: card.tags || [] // Include current tags when saving
                 },
                 response => {
                     if (response?.success) {
@@ -671,9 +667,11 @@ function createTagDropdown(card) {
                                 type: 'SAVE_AD',
                                 adId: card.adId,
                                 videoUrl: card.videoUrl || null, // Use video URL if found, otherwise null
+                                posterUrl: card.posterUrl || null, // Use poster URL if found, otherwise null
                                 imgUrl: card.imgUrl || null, // Use image URL if found, otherwise null
                                 query_params: queryParams,
-                                tags: card.tags
+                                full_text: card.element.textContent || '', // Include full text of the ad
+                                tags: card.tags || [] // Include current tags when saving
                             },
                             response => {
                                 if (response?.success) {
@@ -783,9 +781,12 @@ function updateAllDropdowns() {
                                 { 
                                     type: 'SAVE_AD',
                                     adId: card.adId,
-                                    videoUrl: card.videoUrl,
+                                    videoUrl: card.videoUrl || null, // Use video URL if found, otherwise null
+                                    posterUrl: card.posterUrl || null, // Use poster URL if found, otherwise null
+                                    imgUrl: card.imgUrl || null, // Use image URL if found, otherwise null
                                     query_params: queryParams,
-                                    tags: card.tags
+                                    full_text: card.element.textContent || '', // Include full text of the ad
+                                    tags: card.tags || [] // Include current tags when saving
                                 },
                                 response => {
                                     if (response?.success) {
@@ -875,10 +876,12 @@ function updateCardTags(card) {
                         { 
                             type: 'SAVE_AD',
                             adId: card.adId,
-                            videoUrl: card.videoUrl || null,
+                            videoUrl: card.videoUrl || null, // Use video URL if found, otherwise null
+                            posterUrl: card.posterUrl || null, // Use poster URL if found, otherwise null
                             imgUrl: card.imgUrl || null, // Use image URL if found, otherwise null
                             query_params: queryParams,
-                            tags: card.tags
+                            full_text: card.element.textContent || '', // Include full text of the ad
+                            tags: card.tags || [] // Include current tags when saving
                         },
                         response => {
                             if (response?.success) {

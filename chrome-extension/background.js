@@ -84,6 +84,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             const requestBody = { 
                 adId: msg.adId,
                 videoUrl: msg.videoUrl || null, // optional video URL
+                posterUrl: msg.posterUrl || null, // optional poster URL for video
                 imgUrl: msg.imgUrl || null, // optional image URL
                 query_params: msg.query_params || {},
                 full_html_text: msg.full_text || '', // optional full text of the ad

@@ -55,7 +55,7 @@ function parseJSONL(input) {
                                 dataToSend.set(String(counter_correlationId), responseData[i]);
                                 counter_correlationId++;
                             }
-                        }         
+                        }
                     } catch (error) {
                         console.log('Failed to parse GraphQL XHR response:', error);
                     }
@@ -78,6 +78,7 @@ window.addEventListener('message', (event) => {
         dataToSend.delete(String(event.data.correlationId));
     }
 });
+
 
 // make this script running forever, every second, to send data it have stored in dataToSend
 setInterval(() => {
