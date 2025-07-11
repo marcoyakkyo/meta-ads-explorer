@@ -84,18 +84,26 @@ def show_ads(ads: list, num_cols: int = 3):
         col = cols[i % num_cols]  # Cycle through columns
 
         with col:
-            col.write(f"[Ad ID: {ad['ad_archive_id']}](https://www.facebook.com/ads/library/?id={ad['ad_archive_id']})")
+            # col.write(f"[Ad ID: {ad['ad_archive_id']}](https://www.facebook.com/ads/library/?id={ad['ad_archive_id']})")
+            
+            # Copy Ad ID functionality - simple and reliable approach WITH LINK TO AD LIBRARY
+            col.code(ad['ad_archive_id'])
+            
 
             # ad with video
             if ad.get("video_url"):
                 col.write(f"[Video URL]({ad['video_url']})")
                 if ad.get("poster_url"):
-                    col.image(ad["poster_url"], use_container_width=True, caption="Ad Video Preview")
+                    # col.image(ad["poster_url"], use_container_width=True, caption="Ad Video Preview")
+                    # clickable poster image to the ad library
+                    col.markdown(f"[![Ad Video Preview]({ad['poster_url']})](https://www.facebook.com/ads/library/?id={ad['ad_archive_id']})")
+                    # col.image(ad["poster_url"], use_container_width=True, caption="Ad Video Preview")
                 else:
                     col.write("No poster image available for this video ad.")
             # ad with image
             elif ad.get("img_url"):
-                col.image(ad["img_url"], use_container_width=True, caption="Ad Image")
+                # col.image(ad["img_url"], use_container_width=True, caption="Ad Image")
+                col.markdown(f"[![Ad Image]({ad['img_url']})](https://www.facebook.com/ads/library/?id={ad['ad_archive_id']})")
             # no image or video
             else:
                 col.write("No image or video available for this ad.")
