@@ -20,6 +20,7 @@ elif not auth.check_password():
 def init_data():
     st.session_state["existing_tags"] = mongo.get_tags()
     st.session_state["selected_tags"] = []
+    st.session_state["ad_type_filter"] = "all"
 
     st.session_state["ads_data"] = mongo.get_ads(last_fetched_ad_id=None, limit=PAGE_SIZE)
     st.session_state["last_id"] = st.session_state["ads_data"][-1]["_id"] if st.session_state["ads_data"] else None
