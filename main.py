@@ -34,19 +34,24 @@ st.title("FB Ads Meta - Saved Ads")
 # ---------------------------- INIT DATA ----------------------------
 if "ads_data" not in st.session_state:
     init_data()
-    st.success("Ads data initialized successfully!")
 
 # ---------------------------- Button update ----------------------------
 if st.button("REFRESH Ads Data"):
     init_data()
-    st.success("Ads data updated successfully!")
+    # st.success("Ads data updated successfully!", icon="✅")
+    ## show instead a similar success message but only for 1 second
+    tmp = st.empty()
+    tmp.success("Ads data updated successfully!", icon="✅")
+    sleep(0.5)  # Show the message for 1 second
+    tmp.empty()  # Clear the message after 1 second
+    st.rerun()  # Refresh the page to reflect changes
+
 
 # ---------------------------- DISPLAY ADS ----------------------------
 # display ads in a table with 4 rows, 5 columns, than ask for 'load more' button
 if not st.session_state["ads_data"]:
     st.warning("No ads data available. Please refresh or check your database connection.")
     st.stop()
-
 
 
 # Display ads in a table format
@@ -97,31 +102,19 @@ selected_tags = st.sidebar.multiselect(
     key="tag_filter"
 )
 
-
-
-# Show current filter status
-if st.session_state["selected_tags"]:
-    st.sidebar.write("**Current filter:**")
-    for tag in st.session_state["selected_tags"]:
-        st.sidebar.write(f"• {tag}")
-else:
-    st.sidebar.write("**No filter applied** - showing all ads")
-
-st.sidebar.write("Filter by type (video, image)")
-
 selected_type = st.sidebar.selectbox(
     "Select ad type to filter:",
     options=["All", "Video", "Image"],
     index=0,  # Default to "All"
     key="ad_type_filter_type"
 )
+
+
 # Apply filter button
-if st.sidebar.button("Apply Tag Filter", key="apply_filter"):
-    # Update selected tags in session state
+if st.sidebar.button("Apply Filters", key="apply_filter"):
     st.session_state["selected_tags"] = selected_tags
     st.session_state["ad_type_filter"] = selected_type.lower()
-    
-    # Fetch filtered ads
+
     st.session_state["ads_data"] = mongo.get_ads(
         last_fetched_ad_id=None, 
         limit=PAGE_SIZE, 
@@ -130,53 +123,29 @@ if st.sidebar.button("Apply Tag Filter", key="apply_filter"):
     )
     st.session_state['last_id'] = st.session_state["ads_data"][-1]["_id"] if st.session_state["ads_data"] else None
 
-    st.sidebar.success(f"Filtered by {len(st.session_state['selected_tags'])} tag(s)")
+    st.sidebar.success(f"Filters applied - showing {len(st.session_state['ads_data'])} ads")
     st.rerun()  # Rerun to refresh the display
 
-# Apply type filter
-# if selected_type != "All":
-#     st.session_state["ad_type_filter"] = selected_type.lower()
 
-#     st.session_state["ads_data"] = mongo.get_ads(
-#         last_fetched_ad_id=None,
-#         limit=PAGE_SIZE,
-#         tags=st.session_state["selected_tags"],
-#         type_ad=st.session_state["ad_type_filter"]
-#     )
-#     st.session_state['last_id'] = st.session_state["ads_data"][-1]["_id"] if st.session_state["ads_data"] else None
-#     st.sidebar.success(f"Filtered by {selected_type} ads")
-# else:
-#     st.session_state["ad_type_filter"] = "all"
-#     st.session_state["ads_data"] = mongo.get_ads(
-#         last_fetched_ad_id=None,
-#         limit=PAGE_SIZE,
-#         tags=st.session_state["selected_tags"]
-#     )
-#     st.session_state['last_id'] = st.session_state["ads_data"][-1]["_id"] if st.session_state["ads_data"] else None
-#     st.sidebar.success("Showing all ad types")
+# Show current filter status
+if st.session_state["selected_tags"] or st.session_state.get("ad_type_filter", "all") != "all":
+    st.sidebar.write("**Current filters:**")
+    for tag in st.session_state["selected_tags"]:
+        st.sidebar.write(f"• {tag}")
+    st.sidebar.write(f"• Type: {st.session_state['ad_type_filter'].capitalize()}")
+else:
+    st.sidebar.write("**No filter applied** - showing all ads")
+
+
 # Clear filter button
-if st.sidebar.button("Clear Filter", key="clear_filter"):
+if st.sidebar.button("Clear Filters", key="clear_filter"):
     st.session_state["selected_tags"] = []
     st.session_state["ad_type_filter"] = "all"
-    # reset the select type box to "All"
-    
 
     st.session_state["ads_data"] = mongo.get_ads(last_fetched_ad_id=None, limit=PAGE_SIZE, tags=[])
+    st.session_state["existing_tags"] = mongo.get_tags()  # Refresh existing tags
+
     st.session_state['last_id'] = st.session_state["ads_data"][-1]["_id"] if st.session_state["ads_data"] else None
     st.sidebar.success("Filter cleared - showing all ads")
     st.rerun()  # Rerun to refresh the display
-# js = '''
-# <script>
-#     var body = window.parent.document.querySelector(".main");
-#     console.log(body);
-#     body.scrollTop = 0;
-# </script>
-# '''
-# import streamlit.components.v1 as components
 
-# if st.button("Back to top"):
-#     temp = st.empty()
-#     with temp:
-#         components.html(js)
-#         sleep(1) # To make sure the script can execute before being deleted
-#     temp.empty()
