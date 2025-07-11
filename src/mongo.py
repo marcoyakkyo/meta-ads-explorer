@@ -27,7 +27,7 @@ client = MongoClient(st.secrets["MONGO_DB_URL"])[st.secrets["MONGO_DB_NAME"]]
 #   }
 # }
 
-def get_ads(last_fetched_ad_id: ObjectId=None, tags: list=[], limit: int=20):
+def get_ads(last_fetched_ad_id: ObjectId=None, tags: list=[], limit: int=20, type: str="all") -> list:
     """
     Fetch ads from the MongoDB collection.
     If last_fetched_ad_id is provided, fetch ads after that ID.
@@ -37,6 +37,11 @@ def get_ads(last_fetched_ad_id: ObjectId=None, tags: list=[], limit: int=20):
         query["_id"] = {"$lt": ObjectId(last_fetched_ad_id)}
     if tags:
         query["tags"] = {"$in": tags}
+    if type == "video":
+        query["video_url"] = {"$exists": True}
+    elif type == "image":
+        query["img_url"] = {"$exists": True}
+
 
     fields = {
         'ad_archive_id': 1,
