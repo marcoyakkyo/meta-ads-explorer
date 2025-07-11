@@ -48,7 +48,9 @@ def get_ads(last_fetched_ad_id: ObjectId=None, tags: list=[], limit: int=20):
         'tags': 1,
         'created_at': 1,
         'updated_at': 1,
-        'snapshot': 1
+        'snapshot': 1,
+        'ai_image_analysis': 1,
+        'ai_video_analysis': 1
     }
     ads = list(client["gigi_ads_saved"].find(query, fields).sort("_id", -1).limit(limit))
 
