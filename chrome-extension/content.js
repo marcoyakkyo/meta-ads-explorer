@@ -479,10 +479,10 @@ function createTagDropdown(card) {
         overflow-y: auto;
     `;
 
-    // Add new tag input
+    // Search/Add new tag input
     const newTagInput = document.createElement('input');
     newTagInput.type = 'text';
-    newTagInput.placeholder = 'Add new tag...';
+    newTagInput.placeholder = 'Search tags or add new... (dropdown stays open)';
     newTagInput.style.cssText = `
         width: 100%;
         padding: 8px;
@@ -491,9 +491,9 @@ function createTagDropdown(card) {
         outline: none;
     `;
 
-    // Add tag button
+    // Add tag button (initially hidden)
     const addTagBtn = document.createElement('button');
-    addTagBtn.textContent = 'Add Tag';
+    addTagBtn.textContent = 'Add New Tag';
     addTagBtn.style.cssText = `
         width: 100%;
         padding: 8px;
@@ -502,6 +502,7 @@ function createTagDropdown(card) {
         color: white;
         cursor: pointer;
         border-bottom: 1px solid #eee;
+        display: none;
     `;
 
     // Available tags list
@@ -528,107 +529,62 @@ function createTagDropdown(card) {
         if (!card.tags.includes(tag)) {
             card.tags.push(tag);
             allTags.add(tag);
-            initializeDropdown(); // Use local initialization
-            updateTagsOnServer();
-        }
-    }
-
-    function updateTagsOnServer() {
-        // console.log('Updating tags for ad:', card.adId, card.tags);
-        
-        // If the ad is not saved yet, save it first with the tags
-        if (!card.isSaved) {
-            // console.log('Ad not saved yet, saving with tags:', card.tags);
+            updateSelectedTagsDisplay(); // Only update selected tags display
+            filterAvailableTags(''); // Refresh the available tags without closing dropdown
             
-            // Extract query parameters from current URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const queryParams = {};
-            for (const [key, value] of urlParams.entries()) {
-                queryParams[key] = value;
+            // Update server immediately - handle both saved and unsaved ads
+            if (!card.isSaved) {
+                // If ad is not saved yet, save it with the tags
+                const urlParams = new URLSearchParams(window.location.search);
+                const queryParams = {};
+                for (const [key, value] of urlParams.entries()) {
+                    queryParams[key] = value;
+                }
+                
+                chrome.runtime.sendMessage(
+                    { 
+                        type: 'SAVE_AD',
+                        adId: card.adId,
+                        videoUrl: card.videoUrl || null,
+                        posterUrl: card.posterUrl || null,
+                        imgUrl: card.imgUrl || null,
+                        query_params: queryParams,
+                        full_text: card.element.textContent || '',
+                        tags: card.tags || []
+                    },
+                    response => {
+                        if (response?.success) {
+                            card.btn.textContent = 'Saved ✓';
+                            card.btn.style.backgroundColor = 'lightgreen';
+                            card.isSaved = true;
+                            savedAdIds.add(card.adId);
+                        } else {
+                            // console.error('Failed to save ad with tags:', response?.error);
+                        }
+                    }
+                );
+            } else {
+                // Ad is already saved, just update tags
+                chrome.runtime.sendMessage(
+                    { 
+                        type: 'UPDATE_AD_TAGS',
+                        adId: card.adId,
+                        tags: card.tags
+                    },
+                    response => {
+                        if (response?.success) {
+                            // console.log('Tags updated successfully:', card.tags);
+                        } else {
+                            // console.error('Failed to update tags:', response?.error);
+                        }
+                    }
+                );
             }
-            
-            chrome.runtime.sendMessage(
-                { 
-                    type: 'SAVE_AD',
-                    adId: card.adId,
-                    videoUrl: card.videoUrl || null, // Use video URL if found, otherwise null
-                    posterUrl: card.posterUrl || null, // Use poster URL if found, otherwise null
-                    imgUrl: card.imgUrl || null, // Use image URL if found, otherwise null
-                    query_params: queryParams,
-                    full_text: card.element.textContent || '', // Include full text of the ad
-                    tags: card.tags || [] // Include current tags when saving
-                },
-                response => {
-                    if (response?.success) {
-                        // console.log('Ad saved successfully with tags:', card.tags);
-                        // Update UI to show saved state
-                        card.btn.textContent = 'Saved ✓';
-                        card.btn.style.backgroundColor = 'lightgreen';
-                        card.isSaved = true;
-                        // Add to our local saved ads set
-                        savedAdIds.add(card.adId);
-                        // Update the global allTags set with any new tags
-                        card.tags.forEach(tag => allTags.add(tag));
-                        // Update all other dropdowns to show the new tags
-                        updateAllDropdowns();
-                    } else {
-                        // console.error('Failed to save ad with tags:', response?.error);
-                    }
-                }
-            );
-        } else {
-            // Ad is already saved, just update the tags
-            chrome.runtime.sendMessage(
-                { 
-                    type: 'UPDATE_AD_TAGS',
-                    adId: card.adId,
-                    tags: card.tags
-                },
-                response => {
-                    if (response?.success) {
-                        // console.log('Tags updated successfully:', card.tags);
-                        // Update the global allTags set with any new tags
-                        card.tags.forEach(tag => allTags.add(tag));
-                        // Update all other dropdowns to show the new tags
-                        updateAllDropdowns();
-                    } else {
-                        // console.error('Failed to update tags:', response?.error);
-                    }
-                }
-            );
         }
     }
 
-    // Event handlers
-    selectedTagsDiv.onclick = () => {
-        dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
-        initializeDropdown(); // Refresh the available tags when opening
-    };
-
-    addTagBtn.onclick = () => {
-        const newTag = newTagInput.value.trim();
-        if (newTag && !card.tags.includes(newTag)) {
-            addTag(newTag);
-            newTagInput.value = '';
-        }
-    };
-
-    newTagInput.onkeypress = (e) => {
-        if (e.key === 'Enter') {
-            addTagBtn.click();
-        }
-    };
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!container.contains(e.target)) {
-            dropdownContent.style.display = 'none';
-        }
-    });
-
-    // Initialize the dropdown with existing tags
-    function initializeDropdown() {
-        // Display existing tags
+    // Function to update only the selected tags display without affecting dropdown state
+    function updateSelectedTagsDisplay() {
         selectedTagsDiv.innerHTML = '';
         if (card.tags.length === 0) {
             selectedTagsDiv.innerHTML = '<span style="color: #999;">Click to select tags...</span>';
@@ -651,7 +607,8 @@ function createTagDropdown(card) {
                 tagSpan.querySelector('span').onclick = (e) => {
                     e.stopPropagation();
                     card.tags = card.tags.filter(t => t !== tag);
-                    initializeDropdown(); // Re-initialize display
+                    updateSelectedTagsDisplay(); // Update display
+                    filterAvailableTags(''); // Refresh available tags to show the removed tag
                     
                     // Update server - handle both saved and unsaved ads
                     if (!card.isSaved) {
@@ -707,24 +664,205 @@ function createTagDropdown(card) {
                 selectedTagsDiv.appendChild(tagSpan);
             });
         }
+    }
+
+    // Event handlers
+    selectedTagsDiv.onclick = () => {
+        dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        if (dropdownContent.style.display === 'block') {
+            initializeDropdown(); // Refresh the available tags when opening
+            newTagInput.value = ''; // Clear search
+            addTagBtn.style.display = 'none'; // Hide add button
+            newTagInput.focus(); // Focus on search input for immediate typing
+        }
+    };
+
+    // Search functionality
+    newTagInput.oninput = () => {
+        const searchTerm = newTagInput.value.trim().toLowerCase();
+        filterAvailableTags(searchTerm);
         
-        // Display available tags (not currently selected)
-        tagsList.innerHTML = '';
-        Array.from(allTags).forEach(tag => {
-            if (!card.tags.includes(tag)) {
-                const tagDiv = document.createElement('div');
-                tagDiv.textContent = tag;
-                tagDiv.style.cssText = `
-                    padding: 8px;
-                    cursor: pointer;
-                    border-bottom: 1px solid #eee;
-                `;
-                tagDiv.onmouseover = () => tagDiv.style.backgroundColor = '#f5f5f5';
-                tagDiv.onmouseout = () => tagDiv.style.backgroundColor = 'white';
-                tagDiv.onclick = () => addTag(tag);
-                tagsList.appendChild(tagDiv);
+        // Show/hide add button based on whether the search term is an existing tag
+        const exactMatch = Array.from(allTags).some(tag => tag.toLowerCase() === searchTerm);
+        const alreadySelected = card.tags.some(tag => tag.toLowerCase() === searchTerm);
+        
+        if (searchTerm && !exactMatch && !alreadySelected) {
+            addTagBtn.style.display = 'block';
+            addTagBtn.textContent = `Add "${newTagInput.value.trim()}"`;
+        } else {
+            addTagBtn.style.display = 'none';
+        }
+    };
+
+    addTagBtn.onclick = () => {
+        const newTag = newTagInput.value.trim();
+        if (newTag && !card.tags.includes(newTag)) {
+            addTag(newTag);
+            newTagInput.value = '';
+            addTagBtn.style.display = 'none';
+            filterAvailableTags(''); // Reset filter to show all available tags
+            // Keep dropdown open for multiple selections
+        }
+    };
+
+    newTagInput.onkeypress = (e) => {
+        if (e.key === 'Enter') {
+            const searchTerm = newTagInput.value.trim().toLowerCase();
+            const exactMatch = Array.from(allTags).find(tag => tag.toLowerCase() === searchTerm);
+            
+            if (exactMatch && !card.tags.includes(exactMatch)) {
+                // Select existing tag
+                addTag(exactMatch);
+                newTagInput.value = '';
+                filterAvailableTags(''); // Reset filter to show all available tags
+                // Keep dropdown open for multiple selections
+            } else if (addTagBtn.style.display === 'block') {
+                // Add new tag
+                addTagBtn.click();
             }
+        }
+    };
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!container.contains(e.target)) {
+            dropdownContent.style.display = 'none';
+        }
+    });
+
+    // Filter available tags based on search term
+    function filterAvailableTags(searchTerm = '') {
+        tagsList.innerHTML = '';
+        const filteredTags = Array.from(allTags).filter(tag => {
+            return !card.tags.includes(tag) && 
+                   tag.toLowerCase().includes(searchTerm.toLowerCase());
         });
+        
+        filteredTags.forEach(tag => {
+            const tagDiv = document.createElement('div');
+            tagDiv.textContent = tag;
+            tagDiv.style.cssText = `
+                padding: 8px;
+                cursor: pointer;
+                border-bottom: 1px solid #eee;
+            `;
+            tagDiv.onmouseover = () => tagDiv.style.backgroundColor = '#f5f5f5';
+            tagDiv.onmouseout = () => tagDiv.style.backgroundColor = 'white';
+            tagDiv.onclick = () => {
+                // Add tag to card directly
+                if (!card.tags.includes(tag)) {
+                    card.tags.push(tag);
+                    
+                    // Update only the selected tags display manually
+                    const selectedTagsDiv = card.tagDropdown.querySelector('.selected-tags');
+                    if (selectedTagsDiv) {
+                        selectedTagsDiv.innerHTML = '';
+                        card.tags.forEach(cardTag => {
+                            const tagSpan = document.createElement('span');
+                            tagSpan.style.cssText = `
+                                background-color: #e1f5fe;
+                                color: #01579b;
+                                padding: 2px 8px;
+                                border-radius: 12px;
+                                font-size: 12px;
+                                display: inline-flex;
+                                align-items: center;
+                                margin: 1px;
+                            `;
+                            tagSpan.innerHTML = `${cardTag} <span style="margin-left: 4px; cursor: pointer; font-weight: bold;">&times;</span>`;
+                            selectedTagsDiv.appendChild(tagSpan);
+                        });
+                    }
+                    
+                    // Clear search and hide add button but keep dropdown open
+                    const searchInput = card.tagDropdown.querySelector('input');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        const addBtn = card.tagDropdown.querySelector('button');
+                        if (addBtn) addBtn.style.display = 'none';
+                    }
+                    
+                    // Remove this tag from the current list by hiding it
+                    tagDiv.style.display = 'none';
+                    
+                    // Update server immediately - handle both saved and unsaved ads
+                    if (!card.isSaved) {
+                        // If ad is not saved yet, save it with the tags
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const queryParams = {};
+                        for (const [key, value] of urlParams.entries()) {
+                            queryParams[key] = value;
+                        }
+                        
+                        chrome.runtime.sendMessage(
+                            { 
+                                type: 'SAVE_AD',
+                                adId: card.adId,
+                                videoUrl: card.videoUrl || null,
+                                posterUrl: card.posterUrl || null,
+                                imgUrl: card.imgUrl || null,
+                                query_params: queryParams,
+                                full_text: card.element.textContent || '',
+                                tags: card.tags || []
+                            },
+                            response => {
+                                if (response?.success) {
+                                    card.btn.textContent = 'Saved ✓';
+                                    card.btn.style.backgroundColor = 'lightgreen';
+                                    card.isSaved = true;
+                                    savedAdIds.add(card.adId);
+                                    // Add tag to global tags set
+                                    allTags.add(tag);
+                                } else {
+                                    // console.error('Failed to save ad with tags:', response?.error);
+                                }
+                            }
+                        );
+                    } else {
+                        // Ad is already saved, just update tags
+                        chrome.runtime.sendMessage(
+                            { 
+                                type: 'UPDATE_AD_TAGS',
+                                adId: card.adId,
+                                tags: card.tags
+                            },
+                            response => {
+                                if (response?.success) {
+                                    // console.log('Tags updated successfully:', card.tags);
+                                    // Add tag to global tags set
+                                    allTags.add(tag);
+                                } else {
+                                    // console.error('Failed to update tags:', response?.error);
+                                }
+                            }
+                        );
+                    }
+                }
+            };
+            tagsList.appendChild(tagDiv);
+        });
+        
+        // Show message if no tags match the search
+        if (filteredTags.length === 0 && searchTerm) {
+            const noResultsDiv = document.createElement('div');
+            noResultsDiv.textContent = 'No matching tags found';
+            noResultsDiv.style.cssText = `
+                padding: 8px;
+                color: #999;
+                font-style: italic;
+                text-align: center;
+            `;
+            tagsList.appendChild(noResultsDiv);
+        }
+    }
+
+    // Initialize the dropdown with existing tags
+    function initializeDropdown() {
+        // Update selected tags display
+        updateSelectedTagsDisplay();
+        
+        // Display all available tags initially
+        filterAvailableTags('');
     }
 
     // Initialize
@@ -735,94 +873,8 @@ function createTagDropdown(card) {
 
 // Function to update all tag dropdowns when new tags are added
 function updateAllDropdowns() {
-    adCards.forEach(card => {
-        if (!card.tagDropdown) {
-            // console.warn('updateAllDropdowns: card.tagDropdown is undefined for card:', card.adId);
-            return;
-        }
-        
-        // Find the tags list in this dropdown and update it
-        const tagsList = card.tagDropdown.querySelector('.tags-list');
-        if (!tagsList) {
-            // console.warn('updateAllDropdowns: .tags-list element not found for card:', card.adId);
-            return;
-        }
-        
-        // Clear and rebuild the available tags list
-        tagsList.innerHTML = '';
-        Array.from(allTags).forEach(tag => {
-            if (!card.tags.includes(tag)) {
-                const tagDiv = document.createElement('div');
-                tagDiv.textContent = tag;
-                tagDiv.style.cssText = `
-                    padding: 8px;
-                    cursor: pointer;
-                    border-bottom: 1px solid #eee;
-                `;
-                tagDiv.onmouseover = () => tagDiv.style.backgroundColor = '#f5f5f5';
-                tagDiv.onmouseout = () => tagDiv.style.backgroundColor = 'white';
-                tagDiv.onclick = () => {
-                    if (!card.tags.includes(tag)) {
-                        card.tags.push(tag);
-                        // Update this card's display
-                        updateCardTags(card);
-                        updateAllDropdowns();
-                        
-                        // Update server - handle both saved and unsaved ads
-                        if (!card.isSaved) {
-                            // If ad is not saved yet, save it with the tags
-                            const urlParams = new URLSearchParams(window.location.search);
-                            const queryParams = {};
-                            for (const [key, value] of urlParams.entries()) {
-                                queryParams[key] = value;
-                            }
-                            
-                            chrome.runtime.sendMessage(
-                                { 
-                                    type: 'SAVE_AD',
-                                    adId: card.adId,
-                                    videoUrl: card.videoUrl || null, // Use video URL if found, otherwise null
-                                    posterUrl: card.posterUrl || null, // Use poster URL if found, otherwise null
-                                    imgUrl: card.imgUrl || null, // Use image URL if found, otherwise null
-                                    query_params: queryParams,
-                                    full_text: card.element.textContent || '', // Include full text of the ad
-                                    tags: card.tags || [] // Include current tags when saving
-                                },
-                                response => {
-                                    if (response?.success) {
-                                        // console.log('Ad saved with tags:', card.tags);
-                                        card.btn.textContent = 'Saved ✓';
-                                        card.btn.style.backgroundColor = 'lightgreen';
-                                        card.isSaved = true;
-                                        savedAdIds.add(card.adId);
-                                    } else {
-                                        // console.error('Failed to save ad with tags:', response?.error);
-                                    }
-                                }
-                            );
-                        } else {
-                            // Ad is already saved, just update tags
-                            chrome.runtime.sendMessage(
-                                { 
-                                    type: 'UPDATE_AD_TAGS',
-                                    adId: card.adId,
-                                    tags: card.tags
-                                },
-                                response => {
-                                    if (response?.success) {
-                                        // console.log('Tags updated successfully:', card.tags);
-                                    } else {
-                                        // console.error('Failed to update tags:', response?.error);
-                                    }
-                                }
-                            );
-                        }
-                    }
-                };
-                tagsList.appendChild(tagDiv);
-            }
-        });
-    });
+    // This function is now simplified to avoid dropdown interference
+    // Individual dropdowns update themselves when needed
 }
 
 // Function to update the selected tags display for a specific card
@@ -861,7 +913,7 @@ function updateCardTags(card) {
                 e.stopPropagation();
                 card.tags = card.tags.filter(t => t !== tag);
                 updateCardTags(card);
-                updateAllDropdowns();
+                // Note: Not calling updateAllDropdowns() to keep dropdown open
                 
                 // Update server - handle both saved and unsaved ads
                 if (!card.isSaved) {
