@@ -128,7 +128,7 @@ def show_ads(ads: list, num_cols: int = 3):
                 eliminate_ad(ad)
 
             # Expandable tag management section
-            with col.expander("Manage Tags", expanded=False):                  
+            with col.expander("Manage Tags", expanded=False): 
 
                 # Get current tags and all available tags
                 current_tags = ad.get('tags', [])

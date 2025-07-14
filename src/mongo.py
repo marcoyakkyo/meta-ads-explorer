@@ -105,3 +105,49 @@ def update_ad_tags(ad_archive_id: str, new_tags: list) -> bool:
         return False
 
 
+def update_chatbot_session(session_id: str, new_message: dict) -> bool:
+    try:
+        res = client["gigi_chatbot_sessions"].update_one(
+            {"_id": ObjectId(session_id)},
+            {
+                "$set": {
+                    "updated_at": datetime.now(),
+                },
+                "$inc": {
+                    "num_messages": 1
+                },
+                "$push": {
+                    "messages": new_message
+                },
+                "$setOnInsert": {
+                    "created_at": datetime.now(),
+                }
+            },
+            upsert=True  # Create a new session if it doesn't exist
+        )
+        print(f"Updated chatbot session {session_id}")
+        return True if res.modified_count > 0 or res.upserted_id else False
+    except Exception as e:
+        print(f"Error updating chatbot session: {str(e)}")
+        return False
+
+
+def get_chatbot_session(session_id: str) -> dict:
+    try:
+        session = client["gigi_chatbot_sessions"].find_one({"_id": ObjectId(session_id)}, {"messages": 1})
+        if session:
+            print(f"Fetched chatbot session {session_id}")
+            return session
+        print(f"No chatbot session found for ID {session_id}")
+    except Exception as e:
+        print(f"Error fetching chatbot session: {type(e)} - {str(e)}")
+    return None
+
+
+def get_history_chats(limit: int = 12, skip: int = 0) -> list:
+    sessions = list(client["gigi_chatbot_sessions"].find(
+        {},
+        {"updated_at": 1, "created_at": 1, "num_messages": 1}
+    ).sort("updated_at", -1).skip(skip).limit(limit))
+    print(f"Fetched {len(sessions)} chatbot sessions from MongoDB. Skip: {skip}, Limit: {limit}")
+    return sessions
