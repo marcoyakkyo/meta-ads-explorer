@@ -5,28 +5,23 @@ let allTags = new Set(); // Store all available tags
 let mappedAds = []; // Store mapped ads with tags
 
 
-// add a message listener that redirects messages to chrome runtime
+// add a message listener that redirects messages to chrome runtime 
+// (act as a bridge from inject.js to background.js)
 window.addEventListener('message', (event) => {
     if (event.data.type === 'GRAPHQL_RESPONSE') {
+
         console.log('Received message from inject script', event.data.data);
 
-        // Send a ping to the background script to check if it's up
-        chrome.runtime.sendMessage({ type: 'PING' }, (response) => {
-            if (response && response.success) {
-                // Send the data to the background script
-                chrome.runtime.sendMessage({
-                    type: 'GRAPHQL_RESPONSE',
-                    data: event.data.data
-                });
-                // “Reply” by posting back to the same window
-                event.source.postMessage({
-                    type: 'GRAPHQL_RESPONSE_COMPLETED',
-                    correlationId: event.data.correlationId
-                }, event.origin);
-            } else {
-                console.error('Background script is not responding');
-                return;
-            }
+        chrome.runtime.sendMessage({
+            type: 'GRAPHQL_RESPONSE',
+            data: event.data.data
+        }, (response) => {
+            // “Reply” by posting back to the same window
+            event.source.postMessage({
+                type: 'GRAPHQL_RESPONSE_COMPLETED',
+                correlationId: event.data.correlationId
+            }, event.origin);
+            console.log('Response sent back to inject script');
         });
     }
 });
@@ -295,7 +290,7 @@ async function fetchSavedAds() {
                 adId: ad.ad_archive_id,
                 tags: ad.tags || [] // Ensure tags is always an array
             }));
-            
+
             // Store all available tags
             if (response.tags) {
                 allTags = new Set(response.tags);
@@ -1055,22 +1050,7 @@ setupMutationObserver();
 
 // Initial pass - fetch saved ads first, then insert buttons
 (async () => {
-//   console.log('🎯 Starting FB Ad Saver initialization...');
-//   console.log('📍 Current URL:', window.location.href);
-  
-  try {
-    // console.log('📥 Fetching saved ads...');
     await fetchSavedAds();
-
-    // console.log('⏱️ Waiting 3 seconds for page to load...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    // console.log('🔍 Looking for ad cards...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
     await insertSaveButtons();
-
-    // console.log('✅ FB Ad Saver initialization complete!');
-  } catch (error) {
-    // console.error('❌ FB Ad Saver initialization failed:', error);
-  }
 })();
-

@@ -81,7 +81,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             // Check if we have intercepted data for this ad, try with both int and string type
             const extraData = interceptedAdsData.get(msg.adId) || interceptedAdsData.get(String(msg.adId)) || null;
 
-            const requestBody = { 
+            const requestBody = {
                 adId: msg.adId,
                 videoUrl: msg.videoUrl || null, // optional video URL
                 posterUrl: msg.posterUrl || null, // optional poster URL for video

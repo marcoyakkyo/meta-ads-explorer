@@ -182,21 +182,19 @@ def show_ads(ads: list, num_cols: int = 3):
             # Expandable details section
             with col.expander("Show Details", expanded=False):
                 page_id = ad.get("query_params", {}).get("view_all_page_id", "N/A")
-
+                competitor_name = st.session_state["competitors"].get(str(page_id), "Unknown Name")
+                link_url = ad.get('snapshot', {}).get("link_url", "No link available.")
+                ad_title = ad.get('snapshot', {}).get('title', 'No ad title available.')
+                ad_body = ad.get('snapshot', {}).get('body', {}).get('text', None)
+                ad_body = ad_body if ad_body else ad.get("full_html_text", None)
+                ad_body = ad_body if ad_body else "No ad body available."
+    
                 st.write(f"**Page ID:** {page_id}")
-                if str(page_id) in st.session_state["competitors"]:
-                    st.write(f"**Competitor:** {st.session_state['competitors'][str(page_id)]}")
-
-                if 'snapshot' in ad and 'body' in ad['snapshot'] and 'text' in ad['snapshot']['body']:
-                    ad_body = ad['snapshot']['body']['text']
-                elif ad.get("full_html_text", ""):
-                    ad_body = ad['full_html_text']
-                else:
-                    ad_body = "No ad body available."
-
+                st.write(f"**Competitor:** {competitor_name}")
+                st.write(f"**Link URL:** {link_url}")
+                st.write(f"**Ad title:** {ad_title}")
                 st.write(f"**Ad body:**")
                 st.write(ad_body)
-
                 st.write(f"**Created at:** {ad['created_at']}")
                 st.write(f"**Updated at:** {ad['updated_at']}")
 
