@@ -1,7 +1,6 @@
 import streamlit as st
 from src import mongo
 
-
 def update_ad_tags(ad: dict, new_tags: list):
     """Update tags for a specific ad in the database"""
     try:
@@ -79,14 +78,34 @@ def display_ai_analysis_popup(analysis_content: str, analysis_type: str, ad_arch
 
     @st.dialog(f"AI {analysis_type} Analysis - Ad {ad_archive_id}")
     def show_analysis():
-        # Add download button within the modal
+        # PDF download button at the top
+        from markdown_pdf import MarkdownPdf, Section
+        import tempfile
+        import os
+        
+        analysis_pdf = MarkdownPdf(toc_level=2, optimize=True)
+        analysis_pdf.add_section(Section(analysis_content))
+        
+        # Get PDF content as bytes using temporary file
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp_file:
+            analysis_pdf.save(tmp_file.name)
+            with open(tmp_file.name, 'rb') as f:
+                pdf_content = f.read()
+            os.unlink(tmp_file.name)
+        
         st.download_button(
-            label=f"Download Full AI {analysis_type} Analysis",
-            data=analysis_content,
-            file_name=f"ai_{analysis_type.lower()}_analysis_{ad_archive_id}.md",
-            mime="text/plain"
+            label=f"📄 Download as PDF",
+            data=pdf_content,
+            file_name=f"ai_{analysis_type.lower()}_analysis_{ad_archive_id}.pdf",
+            mime="application/pdf",
+            use_container_width=True
         )
-        st.markdown(analysis_content)
+        
+        st.divider()
+        
+        # Display the analysis content in a scrollable container
+        with st.container(height=500):
+            st.markdown(analysis_content)
 
     show_analysis()
     return None
