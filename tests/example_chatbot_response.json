@@ -1,0 +1,195 @@
+[
+  {
+    "output": "I checked your saved tags and picked the tag \"hook\" for you. Here are 3 ads with the tag \"hook\":\n\n1. Ad ID: 1132754415366171\n   - Product: Turmeric Skincare Line\n   - Highlights: Glow-enhancing face wash, spot-fading scrub, skin-regenerating glow butter\n   - Link: https://www.myaplbun.com/products/glow-combo\n   - Video: [Watch](https://video-mxp2-1.xx.fbcdn.net/v/t42.1790-2/440748981_1135375227780711_3718323911670214412_n.mp4?_nc_cat=104&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=a6JZtiEXauwQ7kNvwGvtchh&_nc_oc=Adn2hthU-YcqE2vHCcYPBpiKynFJlngx54X2Ud_vNBNqqjiZhVwWy5SABJ_5xqJ48tk&_nc_zt=28&_nc_ht=video-mxp2-1.xx&_nc_gid=bYTrpMZWItIzM98ST57iew&oh=00_AfRGYtJUo5GcN41W9Q0-hhl7BE2k8d8YJ2foBjfi7KNdhQ&oe=687ABEDC)\n\n2. Ad ID: 1254423029699783\n   - Product: Glow Shot (brightening + exfoliating ampoule)\n   - Highlights: Smooth skin, faded dark spots, glow restore\n   - Discount: 50% Off + free shipping\n   - Link: None (video only)\n   - Video: [Watch](https://video-mxp2-1.xx.fbcdn.net/v/t42.1790-2/506515972_749063047792200_6512128339143285357_n.mp4?_nc_cat=111&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=BHU_xNk1I4QQ7kNvwHY7WzQ&_nc_oc=AdlSKXXY0L3wICyKOOYlI_1y42E4CCcyfKtVHQG9JYpYKJKIg1SGOhfyHGR9U0eVEc0&_nc_zt=28&_nc_ht=video-mxp2-1.xx&_nc_gid=eIYm-CJmkAhDqi-ZOeOtTg&oh=00_AfQWlW8HSYv8WB4eUK1vKC2DKJdAF_y5uHzMP4TQOmvahA&oe=687AACDA)\n\n3. Ad ID: 743209371686941\n   - Product: Glow Shot (same product as above)\n   - Highlights: Same as above, long video format\n   - Discount: 50% Off + free shipping\n   - Link: None (video only)\n   - Video: [Watch](https://video-mxp1-1.xx.fbcdn.net/v/t42.1790-2/505976763_1755476792517433_2543281279067329463_n.mp4?_nc_cat=108&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=OC_ggEovAH0Q7kNvwEGLAuG&_nc_oc=AdmbeBtQeEfuE4sGq18T15v3ghQ4kUPWUUTF36VcO_aPzBRKEVnehBIRFqo0_kgRw-g&_nc_zt=28&_nc_ht=scontent-mxp1-1.xx&_nc_gid=eIYm-CJmkAhDqi-ZOeOtTg&oh=00_AfSqGyKw7Jp_wOeB5usMYbTzmkEk6sdt4BGrzeR5R9NisA&oe=687AA5FA)\n\nWould you like me to analyze one of these ads for performance insights or help you set up a similar campaign?",
+    "intermediateSteps": [
+      {
+        "action": {
+          "tool": "MongoDB_-_List_Tags_of_saved_ads1",
+          "toolInput": {},
+          "toolCallId": "call_oWJArsttDSL7VMxq3eMIU8Ii",
+          "log": "Invoking \"MongoDB_-_List_Tags_of_saved_ads1\" with {}\n",
+          "messageLog": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessageChunk"
+              ],
+              "kwargs": {
+                "content": "",
+                "additional_kwargs": {
+                  "tool_calls": [
+                    {
+                      "index": 0,
+                      "id": "call_oWJArsttDSL7VMxq3eMIU8Ii",
+                      "type": "function",
+                      "function": {
+                        "name": "MongoDB_-_List_Tags_of_saved_ads1",
+                        "arguments": "{}"
+                      }
+                    }
+                  ]
+                },
+                "response_metadata": {
+                  "prompt": 0,
+                  "completion": 0,
+                  "usage": {
+                    "prompt_tokens": 781,
+                    "completion_tokens": 19,
+                    "total_tokens": 800,
+                    "prompt_tokens_details": {
+                      "cached_tokens": 0,
+                      "audio_tokens": 0
+                    },
+                    "completion_tokens_details": {
+                      "reasoning_tokens": 0,
+                      "audio_tokens": 0,
+                      "accepted_prediction_tokens": 0,
+                      "rejected_prediction_tokens": 0
+                    }
+                  },
+                  "finish_reason": "tool_calls",
+                  "system_fingerprint": null,
+                  "model_name": "gpt-4.1-mini-2025-04-14"
+                },
+                "tool_call_chunks": [
+                  {
+                    "name": "MongoDB_-_List_Tags_of_saved_ads1",
+                    "args": "{}",
+                    "id": "call_oWJArsttDSL7VMxq3eMIU8Ii",
+                    "index": 0,
+                    "type": "tool_call_chunk"
+                  }
+                ],
+                "id": "chatcmpl-BtuQA5bbW3ovOP5nOd4Th8jeJwEIx",
+                "usage_metadata": {
+                  "input_tokens": 781,
+                  "output_tokens": 19,
+                  "total_tokens": 800,
+                  "input_token_details": {
+                    "audio": 0,
+                    "cache_read": 0
+                  },
+                  "output_token_details": {
+                    "audio": 0,
+                    "reasoning": 0
+                  }
+                },
+                "tool_calls": [
+                  {
+                    "name": "MongoDB_-_List_Tags_of_saved_ads1",
+                    "args": {},
+                    "id": "call_oWJArsttDSL7VMxq3eMIU8Ii",
+                    "type": "tool_call"
+                  }
+                ],
+                "invalid_tool_calls": []
+              }
+            }
+          ]
+        },
+        "observation": "[{\"tags\":[\"Product Page\",\"US\",\"Curcuma\",\"copy skin glow-up\",\"hook\",\"earthlyderm\",\"Copy Scientifico\",\"Beauty\"]}]"
+      },
+      {
+        "action": {
+          "tool": "Get_saved_ads1",
+          "toolInput": {
+            "skip": 0,
+            "include_ai_analysis": false,
+            "mongo_json_query": "{\"tags\":\"hook\"}"
+          },
+          "toolCallId": "call_55oqUAEu24PWXdqHN6w477oU",
+          "log": "Invoking \"Get_saved_ads1\" with {\"skip\":0,\"include_ai_analysis\":false,\"mongo_json_query\":\"{\\\"tags\\\":\\\"hook\\\"}\"}\n",
+          "messageLog": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessageChunk"
+              ],
+              "kwargs": {
+                "content": "",
+                "additional_kwargs": {
+                  "tool_calls": [
+                    {
+                      "index": 0,
+                      "id": "call_55oqUAEu24PWXdqHN6w477oU",
+                      "type": "function",
+                      "function": {
+                        "name": "Get_saved_ads1",
+                        "arguments": "{\"skip\":0,\"include_ai_analysis\":false,\"mongo_json_query\":\"{\\\"tags\\\":\\\"hook\\\"}\"}"
+                      }
+                    }
+                  ]
+                },
+                "response_metadata": {
+                  "prompt": 0,
+                  "completion": 0,
+                  "usage": {
+                    "prompt_tokens": 849,
+                    "completion_tokens": 33,
+                    "total_tokens": 882,
+                    "prompt_tokens_details": {
+                      "cached_tokens": 0,
+                      "audio_tokens": 0
+                    },
+                    "completion_tokens_details": {
+                      "reasoning_tokens": 0,
+                      "audio_tokens": 0,
+                      "accepted_prediction_tokens": 0,
+                      "rejected_prediction_tokens": 0
+                    }
+                  },
+                  "finish_reason": "tool_calls",
+                  "system_fingerprint": null,
+                  "model_name": "gpt-4.1-mini-2025-04-14"
+                },
+                "tool_call_chunks": [
+                  {
+                    "name": "Get_saved_ads1",
+                    "args": "{\"skip\":0,\"include_ai_analysis\":false,\"mongo_json_query\":\"{\\\"tags\\\":\\\"hook\\\"}\"}",
+                    "id": "call_55oqUAEu24PWXdqHN6w477oU",
+                    "index": 0,
+                    "type": "tool_call_chunk"
+                  }
+                ],
+                "id": "chatcmpl-BtuQBGKYL1XN468wqQKFWg1wOvGiq",
+                "usage_metadata": {
+                  "input_tokens": 849,
+                  "output_tokens": 33,
+                  "total_tokens": 882,
+                  "input_token_details": {
+                    "audio": 0,
+                    "cache_read": 0
+                  },
+                  "output_token_details": {
+                    "audio": 0,
+                    "reasoning": 0
+                  }
+                },
+                "tool_calls": [
+                  {
+                    "name": "Get_saved_ads1",
+                    "args": {
+                      "skip": 0,
+                      "include_ai_analysis": false,
+                      "mongo_json_query": "{\"tags\":\"hook\"}"
+                    },
+                    "id": "call_55oqUAEu24PWXdqHN6w477oU",
+                    "type": "tool_call"
+                  }
+                ],
+                "invalid_tool_calls": []
+              }
+            }
+          ]
+        },
+        "observation": "[{\"ad_archive_id\":\"1132754415366171\",\"full_html_text\":\"​AttivaID libreria: 1132754415366171Data di inizio della pubblicazione: 13 lug 2025 · Tempo totale in cui è stata attiva 18 hPiattaforme​​​​​Apri il menu a discesa​Vedi dettagli dell'inserzioneSave To AdScanGlow-comboSponsorizzatoUnlock your skin's potential with our Turmeric Skincare Line! 🌟✨ Glow-enhancing face wash for radiant skin✨ Spot-fading scrub for even tone✨ Skin-regenerating glow butter for youthful radianceGet yours now! 🛍️https://www.myaplbun.com/products/glow-combo0:23 / 1:11WWW.MYAPLBUN.COMGlow-comboAcquista orahook ×Add TagciaogigiBeautyCurcumaUSearthlydermProduct PageCopy ScientificoSave ad\",\"poster_url\":\"https://scontent-mxp2-1.xx.fbcdn.net/v/t39.35426-6/517671322_765763009294075_4891751453001016276_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=njplgdxZdREQ7kNvwEjgqte&_nc_oc=Adl7WhcaQx75g8fgsLd6LBKu-XSvRsWta18iDAWbfaqEpqA5pHUlK0p-tCXvL7K1NwY&_nc_zt=14&_nc_ht=scontent-mxp2-1.xx&_nc_gid=bYTrpMZWItIzM98ST57iew&oh=00_AfR4m42zwcCb5BZ41pqEMQWFnsup6YqVJHUM8X5JZnFJNg&oe=687A8975\",\"tags\":[\"hook\"],\"video_url\":\"https://video-mxp2-1.xx.fbcdn.net/v/t42.1790-2/440748981_1135375227780711_3718323911670214412_n.mp4?_nc_cat=104&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=a6JZtiEXauwQ7kNvwGvtchh&_nc_oc=Adn2hthU-YcqE2vHCcYPBpiKynFJlngx54X2Ud_vNBNqqjiZhVwWy5SABJ_5xqJ48tk&_nc_zt=28&_nc_ht=video-mxp2-1.xx&_nc_gid=bYTrpMZWItIzM98ST57iew&oh=00_AfRGYtJUo5GcN41W9Q0-hhl7BE2k8d8YJ2foBjfi7KNdhQ&oe=687ABEDC\",\"snapshot\":{\"link_url\":\"https://www.myaplbun.com/products/glow-combo\"}},{\"ad_archive_id\":\"1254423029699783\",\"full_html_text\":\"​AttivaID libreria: 1254423029699783Data di inizio della pubblicazione: 13 lug 2025 · Tempo totale in cui è stata attiva 11 hPiattaforme​​​​​Apri il menu a discesa​Vedi dettagli dell'inserzioneSave To AdScanLaura Jane BeautySponsorizzatoI’m 41, mom of two, and my bathroom shelf looked like a graveyard of half-used serums and “miracle” moisturizers. Every night was 6 steps of stingy, sticky layers… and still I woke up dull, blotchy, and dry. I was ready to give up skincare altogether—until one night I gambled on a minimalist duo called Glow Shot.✅ First week — my skin felt smoother without a single tingle✅ Day 10 — dark spots started fading without the flaking✅ Week 2 — my glow was back, and my makeup bag? ShrinkingIf your shelf is full of pricey regrets, this is the glow-reset that finally lives up to the hype.This isn’t another acid that bites. It’s a brightening + exfoliating ampoule, powered by rice extract and niacinamide, designed to gently resurface, hydrate deeply, and leave your skin actually calm—not confused.0:08 / 0:47LAURAJANEBEAUTY.COM7-Day Skin Glow or Money Back!50% Off + free shippingAcquista oraBeauty ×Add TagciaogigiCurcumaUSearthlydermProduct PageCopy ScientificohookSave ad\",\"poster_url\":\"https://scontent-mxp2-1.xx.fbcdn.net/v/t39.35426-6/518326725_1254307626436081_1477850541400688348_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=wTn0XpQfgMoQ7kNvwEm58jE&_nc_oc=AdnKlTivGgOg5UmC6hNfrfYKbHrijycF8YTVKLh6pruTxUk-o2nmhEvM9xiWW4BI0ho&_nc_zt=14&_nc_ht=scontent-mxp2-1.xx&_nc_gid=eIYm-CJmkAhDqi-ZOeOtTg&oh=00_AfSDf4XWEpl6gKE-FBiyG1qvjbv8z6knFF2hMyRhw3v7MQ&oe=687ABD92\",\"tags\":[\"Beauty\",\"US\",\"hook\"],\"video_url\":\"https://video-mxp2-1.xx.fbcdn.net/v/t42.1790-2/506515972_749063047792200_6512128339143285357_n.mp4?_nc_cat=111&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=BHU_xNk1I4QQ7kNvwHY7WzQ&_nc_oc=AdlSKXXY0L3wICyKOOYlI_1y42E4CCcyfKtVHQG9JYpYKJKIg1SGOhfyHGR9U0eVEc0&_nc_zt=28&_nc_ht=video-mxp2-1.xx&_nc_gid=eIYm-CJmkAhDqi-ZOeOtTg&oh=00_AfQWlW8HSYv8WB4eUK1vKC2DKJdAF_y5uHzMP4TQOmvahA&oe=687AACDA\",\"snapshot\":{\"link_url\":null}},{\"ad_archive_id\":\"743209371686941\",\"full_html_text\":\"​AttivaID libreria: 743209371686941Data di inizio della pubblicazione: 13 lug 2025 · Tempo totale in cui è stata attiva 11 hPiattaforme​​​​​Apri il menu a discesa​Vedi dettagli dell'inserzioneSave To AdScanLaura Jane BeautySponsorizzatoI’m 41, mom of two, and my bathroom shelf looked like a graveyard of half-used serums and “miracle” moisturizers. Every night was 6 steps of stingy, sticky layers… and still I woke up dull, blotchy, and dry. I was ready to give up skincare altogether—until one night I gambled on a minimalist duo called Glow Shot.✅ First week — my skin felt smoother without a single tingle✅ Day 10 — dark spots started fading without the flaking✅ Week 2 — my glow was back, and my makeup bag? ShrinkingIf your shelf is full of pricey regrets, this is the glow-reset that finally lives up to the hype.This isn’t another acid that bites. It’s a brightening + exfoliating ampoule, powered by rice extract and niacinamide, designed to gently resurface, hydrate deeply, and leave your skin actually calm—not confused.1:19 / 1:34LAURAJANEBEAUTY.COM7-Day Skin Glow or Money Back!50% Off + free shippingAcquista oraBeauty ×Add TagciaogigiCurcumaUSearthlydermProduct PageCopy ScientificoSave ad\",\"poster_url\":\"https://scontent-mxp1-1.xx.fbcdn.net/v/t39.35426-6/520305075_1112727794088214_873178296096934701_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=CbEEuia2l_YQ7kNvwFIh80r&_nc_oc=AdnWnv8AIk2JNGZsoKEoELhIyjTcjuksTPw0Nt6IL7dunKub3X7ev-lHconFr0avxyU&_nc_zt=14&_nc_ht=scontent-mxp1-1.xx&_nc_gid=eIYm-CJmkAhDqi-ZOeOtTg&oh=00_AfTxsTE5o-kZFa1T_FKWxsqDsPtid9pqRAIrKGoL_gxwNA&oe=687A9FCF\",\"tags\":[\"Beauty\",\"US\",\"hook\"],\"video_url\":\"https://video-mxp1-1.xx.fbcdn.net/v/t42.1790-2/505976763_1755476792517433_2543281279067329463_n.mp4?_nc_cat=108&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=OC_ggEovAH0Q7kNvwEGLAuG&_nc_oc=AdmbeBtQeEfuE4sGq18T15v3ghQ4kUPWUUTF36VcO_aPzBRKEVnehBIRFqo0_kgRw-g&_nc_zt=28&_nc_ht=video-mxp1-1.xx&_nc_gid=eIYm-CJmkAhDqi-ZOeOtTg&oh=00_AfSqGyKw7Jp_wOeB5usMYbTzmkEk6sdt4BGrzeR5R9NisA&oe=687AA5FA\",\"snapshot\":{\"link_url\":null}}]"
+      }
+    ]
+  }
+]

@@ -5,7 +5,6 @@ from src import chatbot_utils, mongo
 
 # ---------------------------- APP INTERFACE ----------------------------
 def main():
-    st.title("Yakkyofy Experts Interface")
 
     # Initialize chat history
     if "chatbot_messages" not in st.session_state:
@@ -22,9 +21,10 @@ def main():
         st.session_state["chatbot_history"] = mongo.get_history_chats(limit=20, skip=0)
 
     # ---------------------------- CHATBOT INTERFACE ----------------------------
-
     # add the link to the workflow
     st.markdown(f"**Url**: [n8n WorkFlow]({st.secrets['chatbot_workflow_url']})")
+    
+
 
     # add a button to rest sessionId and chat history
     if st.sidebar.button("New Chat", key="new_chat_button"):
@@ -43,7 +43,8 @@ def main():
                         st.markdown(f"""\
 **Created At:** {session['created_at'].strftime('%Y-%m-%d %H:%M:%S')}  
 **Last Updated:** {session['updated_at'].strftime('%Y-%m-%d %H:%M:%S')}  
-**Messages:** {session['num_messages']}
+**Messages:** {session['num_messages']}\n
+**Rating:** {session.get('rating', 'Not Rated Yet')}
 """)
                     with col2:
                         st.button(
@@ -70,6 +71,26 @@ def main():
     # Create a container for the chat messages
     chatbot_container = st.container()
 
+    # add a slider to score the current chat from 0 to 5
+    if len(st.session_state["chatbot_messages"]) > 0:
+        with chatbot_container:
+            current_rating = st.session_state.get(f'chat_rating_{st.session_state["chatbot_sessionId"]}', None)
+            current_rating = f"Current Rating: {current_rating}" if current_rating is not None else "No rating yet"
+            st.write(f"### Chatbot Conversation - Current Rating: {current_rating}")
+            st.slider(
+                "### Rate this chat",
+                min_value=0,
+                max_value=5,
+                value=4,
+                step=1,
+                key=f"slider_chat_rating_{st.session_state['chatbot_sessionId']}",
+                on_change=lambda : mongo.update_chat_session_rating(
+                    st.session_state["chatbot_sessionId"],
+                    st.session_state.get(f"slider_chat_rating_{st.session_state['chatbot_sessionId']}", 4)
+                )
+            )
+            st.write("---")
+
     # Add image uploader above the chat area
     uploaded_image = st.file_uploader(
         "Upload an image (optional)",
@@ -91,17 +112,20 @@ def main():
     # Display chat messages from history on app rerun
     with chatbot_container:
         for message in st.session_state["chatbot_messages"]:
-            st.chat_message(message["role"]).markdown(message["content"])
+            if message['role'] != "tool_calls":
+                st.chat_message(message["role"]).markdown(message["content"])
 
     # Place the chat input at the bottom of the page
     if user_input := st.chat_input("What is up?", key="chatbot_input"):
+
+        with_image = st.session_state["chatbot_uploaded_image"] is not None
 
         # Display user message in chat message container
         with chatbot_container:
             st.chat_message("user").markdown(user_input)
 
         # Update chat history with user input
-        chatbot_utils.update_chat("user", user_input, with_image=st.session_state["chatbot_uploaded_image"] is not None)
+        chatbot_utils.update_chat("user", user_input, with_image=with_image)
 
         # Prepare request params and body
         params = {"text": user_input, "sessionId": st.session_state["chatbot_sessionId"]}
@@ -124,14 +148,32 @@ def main():
             print(f"chatbot_message from chatbot: {chatbot_message} - sessionId: {st.session_state['chatbot_sessionId']}")
 
         ## Update chat with assistant response
-        chatbot_utils.update_chat("assistant", chatbot_message, with_image=st.session_state["chatbot_uploaded_image"] is not None)
+        chatbot_utils.update_chat("assistant", chatbot_message, with_image=with_image)
 
         # Display assistant chatbot_message in chat message container
         with chatbot_container:
             st.chat_message("assistant").markdown(chatbot_message)
 
+        messages_tool_calls = []
         if isinstance(intermediate_steps, list):
             st.sidebar.write("Intermediate steps:")
             for step in intermediate_steps:
-                st.sidebar.write(step.get("action").get("tool"))
-                st.sidebar.write("Input: " + str(step.get("action").get("toolInput")))
+                tool = step.get("action", {}).get("tool", None)
+                tool_input = step.get("action", {}).get("toolInput", None)
+                if tool is not None and tool_input is not None:
+                    messages_tool_calls.append({
+                        "tool": tool,
+                        "toolInput": tool_input
+                    })
+                    st.sidebar.write(f"Tool: {tool}")
+                    st.sidebar.write("Input: " + str(tool_input))
+                    st.sidebar.write("---")
+
+        if messages_tool_calls:
+            chatbot_utils.update_chat(
+                "tool_calls",
+                messages_tool_calls,
+                with_image=with_image
+            )
+
+        st.rerun()

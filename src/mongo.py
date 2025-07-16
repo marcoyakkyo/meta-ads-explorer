@@ -114,7 +114,8 @@ def update_chatbot_session(session_id: str, new_message: dict) -> bool:
                     "updated_at": datetime.now(),
                 },
                 "$inc": {
-                    "num_messages": 1
+                    "num_messages": 1 if new_message["role"] != "tool_calls" else 0,
+                    "tool_calls": 1 if new_message["role"] == "tool_calls" else 0
                 },
                 "$push": {
                     "messages": new_message
@@ -132,6 +133,24 @@ def update_chatbot_session(session_id: str, new_message: dict) -> bool:
         return False
 
 
+def update_chat_session_rating(session_id: str, rating: int) -> bool:
+    try:
+        res = client["gigi_chatbot_sessions"].update_one(
+            {"_id": ObjectId(session_id)},
+            {
+                "$set": {
+                    "rating": rating,
+                    "updated_at": datetime.now()
+                }
+            }
+        )
+        print(f"Updated rating for chatbot session {session_id} to {rating}")
+        st.session_state[f'chat_rating_{st.session_state["chatbot_sessionId"]}'] = st.session_state[f'chat_rating_{st.session_state["chatbot_sessionId"]}'];
+        return True if res.modified_count > 0 else False
+    except Exception as e:
+        print(f"Error updating chatbot session rating: {str(e)}")
+        return False
+
 def get_chatbot_session(session_id: str) -> dict:
     try:
         session = client["gigi_chatbot_sessions"].find_one({"_id": ObjectId(session_id)}, {"messages": 1})
@@ -147,7 +166,7 @@ def get_chatbot_session(session_id: str) -> dict:
 def get_history_chats(limit: int = 12, skip: int = 0) -> list:
     sessions = list(client["gigi_chatbot_sessions"].find(
         {},
-        {"updated_at": 1, "created_at": 1, "num_messages": 1}
+        {"updated_at": 1, "created_at": 1, "num_messages": 1, "rating": 1}
     ).sort("updated_at", -1).skip(skip).limit(limit))
     print(f"Fetched {len(sessions)} chatbot sessions from MongoDB. Skip: {skip}, Limit: {limit}")
     return sessions
