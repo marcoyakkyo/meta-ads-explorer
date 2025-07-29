@@ -23,8 +23,6 @@ def main():
     # ---------------------------- CHATBOT INTERFACE ----------------------------
     # add the link to the workflow
     st.markdown(f"**Url**: [n8n WorkFlow]({st.secrets['chatbot_workflow_url']})")
-    
-
 
     # add a button to rest sessionId and chat history
     if st.sidebar.button("New Chat", key="new_chat_button"):
@@ -150,24 +148,23 @@ def main():
         ## Update chat with assistant response
         chatbot_utils.update_chat("assistant", chatbot_message, with_image=with_image)
 
+        messages_tool_calls = []
+        if isinstance(intermediate_steps, list):
+            with chatbot_container:
+                st.sidebar.write("Intermediate steps:")
+                for step in intermediate_steps:
+                    tool = step.get("action", {}).get("tool", None)
+                    tool_input = step.get("action", {}).get("toolInput", None)
+                    if tool is not None and tool_input is not None:
+                        messages_tool_calls.append({
+                            "tool": tool,
+                            "toolInput": tool_input
+                        })
+                        st.chat_input('assistant').markdown(f"Tool: `{tool}`\nInput: `{tool_input}`\n")
+
         # Display assistant chatbot_message in chat message container
         with chatbot_container:
             st.chat_message("assistant").markdown(chatbot_message)
-
-        messages_tool_calls = []
-        if isinstance(intermediate_steps, list):
-            st.sidebar.write("Intermediate steps:")
-            for step in intermediate_steps:
-                tool = step.get("action", {}).get("tool", None)
-                tool_input = step.get("action", {}).get("toolInput", None)
-                if tool is not None and tool_input is not None:
-                    messages_tool_calls.append({
-                        "tool": tool,
-                        "toolInput": tool_input
-                    })
-                    st.sidebar.write(f"Tool: {tool}")
-                    st.sidebar.write("Input: " + str(tool_input))
-                    st.sidebar.write("---")
 
         if messages_tool_calls:
             chatbot_utils.update_chat(
