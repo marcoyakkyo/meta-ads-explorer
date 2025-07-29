@@ -160,7 +160,7 @@ def main():
                             "tool": tool,
                             "toolInput": tool_input
                         })
-                        st.chat_input('assistant').markdown(f"Tool: `{tool}`\nInput: `{tool_input}`\n")
+                        st.chat_message('assistant').markdown(f"Tool: `{tool}`\nInput: `{tool_input}`\n")
 
         # Display assistant chatbot_message in chat message container
         with chatbot_container:
