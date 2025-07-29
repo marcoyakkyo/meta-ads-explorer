@@ -44,6 +44,7 @@ def reset_chat() -> None:
     st.session_state["chatbot_messages"] = []
     st.session_state["chatbot_sessionId"] = str(ObjectId())
     st.session_state["chatbot_history"] = mongo.get_history_chats(limit=20, skip=0)
+    st.session_state["chatbot_tool_calls"] = []
     gc.collect()
     return None
 
@@ -71,7 +72,20 @@ def set_chat(session_id: str) -> None:
     if session:
         st.session_state["chatbot_messages"] = session.get("messages", [])
         st.session_state["chatbot_sessionId"] = session_id
-        st.session_state["chatbot_uploaded_image"] = None  # Reset image on new session
+        st.session_state["chatbot_uploaded_image"] = None
+
+        tool_calls = []
+        for msg in session.get("messages", []):
+            if msg['role'] != 'tool_calls' or 'content' not in msg or not isinstance(msg['content'], list) or not len(msg['content']):
+                continue
+            for tool_call in msg.get("content", []):
+                tool_calls.append({
+                    "tool": tool_call.get("tool", ""),
+                    "parameters": tool_call.get("parameters", ""),
+                    "result": ""
+                })
+        st.session_state["chatbot_tool_calls"] = tool_calls
+
         print(f"Loaded chat session {session_id} with {len(st.session_state['chatbot_messages'])} messages.")
     else:
         # Reset to a new session if not found

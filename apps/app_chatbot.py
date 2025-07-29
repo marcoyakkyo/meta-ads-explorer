@@ -1,5 +1,6 @@
 import streamlit as st
 from bson.objectid import ObjectId
+import json
 
 from src import chatbot_utils, mongo
 
@@ -19,6 +20,9 @@ def main():
 
     if "chatbot_history" not in st.session_state:
         st.session_state["chatbot_history"] = mongo.get_history_chats(limit=20, skip=0)
+
+    if "chatbot_tool_calls" not in st.session_state:
+        st.session_state["chatbot_tool_calls"] = []
 
     # ---------------------------- CHATBOT INTERFACE ----------------------------
     # add the link to the workflow
@@ -65,6 +69,15 @@ def main():
                     st.write("No more chat history available.")
         else:
             st.write("No chat history available.")
+
+    ## create a sidebar expander for the tool calls
+    with st.sidebar.expander("Tool Calls", expanded=True):
+        if st.session_state["chatbot_tool_calls"]:
+            for tool_call in st.session_state["chatbot_tool_calls"]:
+                st.markdown(f"**Tool:** {tool_call['tool']}\n**Parameters:** {tool_call['parameters']}\n**Result:** {tool_call.get('result', 'No result available')}")
+                st.write("-------")
+        else:
+            st.write("No tool calls made in this session.")
 
     # Create a container for the chat messages
     chatbot_container = st.container()
@@ -150,17 +163,29 @@ def main():
 
         messages_tool_calls = []
         if isinstance(intermediate_steps, list):
-            with chatbot_container:
-                st.sidebar.write("Intermediate steps:")
-                for step in intermediate_steps:
-                    tool = step.get("action", {}).get("tool", None)
-                    tool_input = step.get("action", {}).get("toolInput", None)
-                    if tool is not None and tool_input is not None:
-                        messages_tool_calls.append({
-                            "tool": tool,
-                            "toolInput": tool_input
-                        })
-                        st.chat_message('assistant').markdown(f"Tool: `{tool}`\nInput: `{tool_input}`\n")
+            st.sidebar.write("Intermediate steps:")
+            for step in intermediate_steps:
+                tool = step.get("action", {}).get("tool", '').strip()
+                tool_input = step.get("action", {}).get("toolInput", {})
+                if tool is not None and tool_input is not None:
+                    try:
+                        observation = step.get("observation", "")
+                        if observation:
+                            observation = json.loads(str(observation).strip())
+                            observation = json.dumps(observation[0]['text'], indent=2)
+                            observation = observation[:100]
+                    except Exception as e:
+                        print(f"Error parsing observation: {type(e)} - {e}")
+                        observation = "Error parsing observation"
+
+                    messages_tool_calls.append({
+                        "tool": tool,
+                        "parameters": json.dumps(tool_input, indent=2) if isinstance(tool_input, dict) else str(tool_input),
+                        "result": observation
+                    })
+
+            st.session_state["chatbot_tool_calls"].extend(messages_tool_calls)
+            print(f"\n\nmessages_tool_calls:\n{messages_tool_calls}\n\n")
 
         # Display assistant chatbot_message in chat message container
         with chatbot_container:
