@@ -1,6 +1,7 @@
 import streamlit as st
 from bson.objectid import ObjectId
 import json
+from datetime import datetime
 
 from src import chatbot_utils, mongo
 
@@ -31,6 +32,22 @@ def main():
     # add a button to rest sessionId and chat history
     if st.sidebar.button("New Chat", key="new_chat_button"):
         chatbot_utils.reset_chat()
+
+    # Add PDF download button in sidebar
+    if len(st.session_state["chatbot_messages"]) > 0:
+        try:
+            pdf_bytes, filename = chatbot_utils.generate_chat_pdf()
+            st.sidebar.download_button(
+                label="📄 Download Chat as PDF",
+                data=pdf_bytes,
+                file_name=filename,
+                mime="application/pdf",
+                key="download_chat_pdf"
+            )
+        except Exception as e:
+            st.sidebar.error(f"Error generating PDF: {str(e)}")
+    else:
+        st.sidebar.info("Start a conversation to enable PDF download")
 
     # on the sidebar, show the last chat sessions with a button each to load the session
     with st.sidebar.expander("Chat History", expanded=False):
@@ -74,7 +91,7 @@ def main():
     with st.sidebar.expander("Tool Calls", expanded=True):
         if st.session_state["chatbot_tool_calls"]:
             for tool_call in st.session_state["chatbot_tool_calls"]:
-                st.markdown(f"**Tool:** {tool_call['tool']}\n**Parameters:** {tool_call['parameters']}\n**Result:** {tool_call.get('result', 'No result available')}")
+                st.markdown(f"**Tool:** {tool_call['tool']}\n**Parameters:** {tool_call['parameters']}")
                 st.write("-------")
         else:
             st.write("No tool calls made in this session.")
@@ -173,10 +190,10 @@ def main():
                         if observation:
                             observation = json.loads(str(observation).strip())
                             observation = json.dumps(observation[0]['text'], indent=2)
-                            observation = observation[:100]
+                            observation = observation[:250]
                     except Exception as e:
                         print(f"Error parsing observation: {type(e)} - {e}")
-                        observation = "Error parsing observation"
+                        observation = str(step.get("observation", ""))[:250]
 
                     messages_tool_calls.append({
                         "tool": tool,

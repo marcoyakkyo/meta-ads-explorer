@@ -3,6 +3,8 @@ from bson.objectid import ObjectId
 from datetime import datetime
 import streamlit as st
 
+from src.config import IS_DEBUG
+
 client = MongoClient(st.secrets["MONGO_DB_URL"])[st.secrets["MONGO_DB_NAME"]]
 
 # {
@@ -111,7 +113,7 @@ def update_chatbot_session(session_id: str, new_message: dict) -> bool:
             {"_id": ObjectId(session_id)},
             {
                 "$set": {
-                    "updated_at": datetime.now(),
+                    "updated_at": datetime.now()
                 },
                 "$inc": {
                     "num_messages": 1 if new_message["role"] != "tool_calls" else 0,
@@ -122,6 +124,7 @@ def update_chatbot_session(session_id: str, new_message: dict) -> bool:
                 },
                 "$setOnInsert": {
                     "created_at": datetime.now(),
+                    "is_test_chat": IS_DEBUG
                 }
             },
             upsert=True  # Create a new session if it doesn't exist

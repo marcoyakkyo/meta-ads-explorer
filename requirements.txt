@@ -2,3 +2,4 @@ streamlit
 python-dotenv
 pymongo
 markdown-pdf
+reportlab
