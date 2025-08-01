@@ -20,12 +20,12 @@ def get_image_base64(uploaded_file) -> Union[str, None]:
     return None
 
 
-def call_chatbot(url: str, params: Dict[str, Any]={}, body: Dict[str, Any]=None) -> Union[str, None]:
+def call_chatbot(url: str, params: Dict[str, Any]=None, body: Dict[str, Any]=None) -> Union[str, None]:
 
     print(f"Calling {url} with params: {params} and body: {body}")
 
     try:
-        response = requests.get(url, params=params, json=body, headers=CHATBOT_HEADERS)
+        response = requests.post(url, params=params, json=body, headers=CHATBOT_HEADERS)
 
         if response.status_code != 200:
             print(f"Error calling {url}: {response.status_code} - {response.text[:100]}")

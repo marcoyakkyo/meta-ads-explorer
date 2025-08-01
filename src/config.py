@@ -6,4 +6,4 @@ load_dotenv(override=True)
 
 IS_DEBUG = os.getenv("DEBUG", "").lower() == "true"
 
-CHATBOT_HEADERS = {"x-access-password": st.secrets["password_endpoint"]}
+CHATBOT_HEADERS = {"authorization": st.secrets["password_endpoint"]}

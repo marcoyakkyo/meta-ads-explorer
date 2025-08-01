@@ -167,8 +167,11 @@ def get_chatbot_session(session_id: str) -> dict:
 
 
 def get_history_chats(limit: int = 12, skip: int = 0) -> list:
+    query = {}
+    if not IS_DEBUG:
+        query["is_test_chat"] = False
     sessions = list(client["gigi_chatbot_sessions"].find(
-        {},
+        query,
         {"updated_at": 1, "created_at": 1, "num_messages": 1, "rating": 1}
     ).sort("updated_at", -1).skip(skip).limit(limit))
     print(f"Fetched {len(sessions)} chatbot sessions from MongoDB. Skip: {skip}, Limit: {limit}")

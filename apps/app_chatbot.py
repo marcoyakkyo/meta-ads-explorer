@@ -1,13 +1,11 @@
 import streamlit as st
 from bson.objectid import ObjectId
 import json
-from datetime import datetime
 
 from src import chatbot_utils, mongo
 
 # ---------------------------- APP INTERFACE ----------------------------
 def main():
-
     # Initialize chat history
     if "chatbot_messages" not in st.session_state:
         st.session_state["chatbot_messages"] = []
@@ -156,8 +154,7 @@ def main():
         chatbot_utils.update_chat("user", user_input, with_image=with_image)
 
         # Prepare request params and body
-        params = {"text": user_input, "sessionId": st.session_state["chatbot_sessionId"]}
-        body = {}
+        body = {"user_query": user_input, "sessionId": st.session_state["chatbot_sessionId"]}
 
         # Add image to body if available
         if st.session_state["chatbot_uploaded_image"] is not None:
@@ -166,8 +163,7 @@ def main():
         # Call chatbot
         chatbot_message, intermediate_steps = chatbot_utils.call_chatbot(
             st.secrets['chatbot_webhook_url'],
-            params=params,
-            body=body if body else None
+            body=body
         )
 
         if chatbot_message is None:
