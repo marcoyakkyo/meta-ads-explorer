@@ -1,8 +1,7 @@
 import streamlit as st
 from bson.objectid import ObjectId
-import json
 
-from src import chatbot_utils, mongo
+from src import config, chatbot_utils, mongo
 
 # ---------------------------- APP INTERFACE ----------------------------
 def main():
@@ -24,8 +23,6 @@ def main():
         st.session_state["chatbot_tool_calls"] = []
 
     # ---------------------------- CHATBOT INTERFACE ----------------------------
-    # add the link to the workflow
-    st.markdown(f"**Url**: [n8n WorkFlow]({st.secrets['chatbot_workflow_url']})")
 
     # add a button to rest sessionId and chat history
     if st.sidebar.button("New Chat", key="new_chat_button"):
@@ -33,17 +30,17 @@ def main():
 
     # Add PDF download button in sidebar
     if len(st.session_state["chatbot_messages"]) > 0:
-        try:
-            pdf_bytes, filename = chatbot_utils.generate_chat_pdf()
-            st.sidebar.download_button(
-                label="📄 Download Chat as PDF",
-                data=pdf_bytes,
-                file_name=filename,
-                mime="application/pdf",
-                key="download_chat_pdf"
-            )
-        except Exception as e:
-            st.sidebar.error(f"Error generating PDF: {str(e)}")
+        # try:
+        pdf_bytes, filename = chatbot_utils.generate_chat_pdf()
+        st.sidebar.download_button(
+            label="📄 Download Chat as PDF",
+            data=pdf_bytes,
+            file_name=filename,
+            mime="application/pdf",
+            key="download_chat_pdf"
+        )
+        # except Exception as e:
+        #     st.sidebar.error(f"Error generating PDF: {str(e)}")
     else:
         st.sidebar.info("Start a conversation to enable PDF download")
 
@@ -89,7 +86,7 @@ def main():
     with st.sidebar.expander("Tool Calls", expanded=True):
         if st.session_state["chatbot_tool_calls"]:
             for tool_call in st.session_state["chatbot_tool_calls"]:
-                st.markdown(f"**Tool:** {tool_call['tool']}\n**Parameters:** {tool_call['parameters']}")
+                st.markdown(f"**Tool:** {tool_call['tool']}\n**Parameters:** {tool_call['parameters']}\n**Result:** {tool_call['result'][:100]}...")
                 st.write("-------")
         else:
             st.write("No tool calls made in this session.")
@@ -129,86 +126,56 @@ def main():
         st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
         st.session_state["chatbot_uploaded_image"] = chatbot_utils.get_image_base64(uploaded_image)
 
-    # Button to clear the uploaded image
-    if st.session_state["chatbot_uploaded_image"] is not None:
-        if st.button("Clear image", key="chatbot_clear_image"):
-            st.session_state["chatbot_uploaded_image"] = None
-            st.rerun()
-
     # Display chat messages from history on app rerun
     with chatbot_container:
         for message in st.session_state["chatbot_messages"]:
-            if message['role'] != "tool_calls":
+            if message['role'] in ["user", "assistant"] and message.get("content") and not message.get("tool_calls"):
                 st.chat_message(message["role"]).markdown(message["content"])
 
     # Place the chat input at the bottom of the page
     if user_input := st.chat_input("What is up?", key="chatbot_input"):
 
-        with_image = st.session_state["chatbot_uploaded_image"] is not None
-
         # Display user message in chat message container
         with chatbot_container:
             st.chat_message("user").markdown(user_input)
 
-        # Update chat history with user input
-        chatbot_utils.update_chat("user", user_input, with_image=with_image)
+        st.session_state["chatbot_messages"].append({"role": "user", "content": user_input})
 
         # Prepare request params and body
-        body = {"user_query": user_input, "sessionId": st.session_state["chatbot_sessionId"]}
+        body = {
+            "user_query": user_input,
+            "sessionId": st.session_state["chatbot_sessionId"],
+            "is_test_chat": config.IS_DEBUG,
+        }
 
         # Add image to body if available
         if st.session_state["chatbot_uploaded_image"] is not None:
-            body["image"] = st.session_state["chatbot_uploaded_image"]
+            body["image"] = st.session_state.pop("chatbot_uploaded_image")
+            st.session_state["chatbot_uploaded_image"] = None
 
         # Call chatbot
-        chatbot_message, intermediate_steps = chatbot_utils.call_chatbot(
+        response = chatbot_utils.call_chatbot(
             st.secrets['chatbot_webhook_url'],
             body=body
         )
 
-        if chatbot_message is None:
-            chatbot_message = "Sorry, an error occurred. Please try again refreshing the app."
+        # Handle response
+        chatbot_message = response["messages"][-1]["content"] if response else "Sorry, an error occurred. Please try again refreshing the app."
+        print(f"chatbot_message from chatbot: {chatbot_message} - sessionId: {st.session_state['chatbot_sessionId']}")
+
+        # parse the tool calls within the response
+        if response:
+            st.session_state["chatbot_messages"].extend(response["messages"])
+
+            messages_tool_calls = chatbot_utils.parse_tool_calls(response["messages"])
+            if messages_tool_calls:
+                st.session_state["chatbot_tool_calls"].extend(messages_tool_calls)
+                print(f"Tool calls added to session {len(messages_tool_calls)}:\n{messages_tool_calls}\n")
         else:
-            print(f"chatbot_message from chatbot: {chatbot_message} - sessionId: {st.session_state['chatbot_sessionId']}")
-
-        ## Update chat with assistant response
-        chatbot_utils.update_chat("assistant", chatbot_message, with_image=with_image)
-
-        messages_tool_calls = []
-        if isinstance(intermediate_steps, list):
-            st.sidebar.write("Intermediate steps:")
-            for step in intermediate_steps:
-                tool = step.get("action", {}).get("tool", '').strip()
-                tool_input = step.get("action", {}).get("toolInput", {})
-                if tool is not None and tool_input is not None:
-                    try:
-                        observation = step.get("observation", "")
-                        if observation:
-                            observation = json.loads(str(observation).strip())
-                            observation = json.dumps(observation[0]['text'], indent=2)
-                            observation = observation[:250]
-                    except Exception as e:
-                        print(f"Error parsing observation: {type(e)} - {e}")
-                        observation = str(step.get("observation", ""))[:250]
-
-                    messages_tool_calls.append({
-                        "tool": tool,
-                        "parameters": json.dumps(tool_input, indent=2) if isinstance(tool_input, dict) else str(tool_input),
-                        "result": observation
-                    })
-
-            st.session_state["chatbot_tool_calls"].extend(messages_tool_calls)
-            print(f"\n\nmessages_tool_calls:\n{messages_tool_calls}\n\n")
+            st.session_state["chatbot_messages"].append({"role": "assistant", "content": chatbot_message})
 
         # Display assistant chatbot_message in chat message container
         with chatbot_container:
             st.chat_message("assistant").markdown(chatbot_message)
-
-        if messages_tool_calls:
-            chatbot_utils.update_chat(
-                "tool_calls",
-                messages_tool_calls,
-                with_image=with_image
-            )
 
         st.rerun()

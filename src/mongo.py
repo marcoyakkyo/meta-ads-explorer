@@ -107,45 +107,11 @@ def update_ad_tags(ad_archive_id: str, new_tags: list) -> bool:
         return False
 
 
-def update_chatbot_session(session_id: str, new_message: dict) -> bool:
-    try:
-        res = client["gigi_chatbot_sessions"].update_one(
-            {"_id": ObjectId(session_id)},
-            {
-                "$set": {
-                    "updated_at": datetime.now()
-                },
-                "$inc": {
-                    "num_messages": 1 if new_message["role"] != "tool_calls" else 0,
-                    "tool_calls": 1 if new_message["role"] == "tool_calls" else 0
-                },
-                "$push": {
-                    "messages": new_message
-                },
-                "$setOnInsert": {
-                    "created_at": datetime.now(),
-                    "is_test_chat": IS_DEBUG
-                }
-            },
-            upsert=True  # Create a new session if it doesn't exist
-        )
-        print(f"Updated chatbot session {session_id}")
-        return True if res.modified_count > 0 or res.upserted_id else False
-    except Exception as e:
-        print(f"Error updating chatbot session: {str(e)}")
-        return False
-
-
 def update_chat_session_rating(session_id: str, rating: int) -> bool:
     try:
         res = client["gigi_chatbot_sessions"].update_one(
             {"_id": ObjectId(session_id)},
-            {
-                "$set": {
-                    "rating": rating,
-                    "updated_at": datetime.now()
-                }
-            }
+            {"$set": {"rating": rating}}
         )
         print(f"Updated rating for chatbot session {session_id} to {rating}")
         st.session_state[f'chat_rating_{st.session_state["chatbot_sessionId"]}'] = st.session_state[f'chat_rating_{st.session_state["chatbot_sessionId"]}'];
@@ -154,13 +120,14 @@ def update_chat_session_rating(session_id: str, rating: int) -> bool:
         print(f"Error updating chatbot session rating: {str(e)}")
         return False
 
+
 def get_chatbot_session(session_id: str) -> dict:
     try:
         session = client["gigi_chatbot_sessions"].find_one({"_id": ObjectId(session_id)}, {"messages": 1})
-        if session:
-            print(f"Fetched chatbot session {session_id}")
-            return session
-        print(f"No chatbot session found for ID {session_id}")
+        assert session is not None, f"Session with ID {session_id} not found"
+        session["_id"] = str(session["_id"])  # Convert ObjectId to string for JSON compatibility
+        print(f"Fetched chatbot session {session_id} with {len(session['messages'])} messages")
+        return session
     except Exception as e:
         print(f"Error fetching chatbot session: {type(e)} - {str(e)}")
     return None
@@ -170,9 +137,11 @@ def get_history_chats(limit: int = 12, skip: int = 0) -> list:
     query = {}
     if not IS_DEBUG:
         query["is_test_chat"] = False
+
     sessions = list(client["gigi_chatbot_sessions"].find(
         query,
         {"updated_at": 1, "created_at": 1, "num_messages": 1, "rating": 1}
     ).sort("updated_at", -1).skip(skip).limit(limit))
+
     print(f"Fetched {len(sessions)} chatbot sessions from MongoDB. Skip: {skip}, Limit: {limit}")
     return sessions
