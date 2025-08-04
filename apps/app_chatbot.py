@@ -22,6 +22,9 @@ def main():
     if "chatbot_tool_calls" not in st.session_state:
         st.session_state["chatbot_tool_calls"] = []
 
+    if "chatbot_image_uploader_id" not in st.session_state:
+        st.session_state["chatbot_image_uploader_id"] = 0
+
     # ---------------------------- CHATBOT INTERFACE ----------------------------
 
     # add a button to rest sessionId and chat history
@@ -30,17 +33,17 @@ def main():
 
     # Add PDF download button in sidebar
     if len(st.session_state["chatbot_messages"]) > 0:
-        # try:
-        pdf_bytes, filename = chatbot_utils.generate_chat_pdf()
-        st.sidebar.download_button(
-            label="📄 Download Chat as PDF",
-            data=pdf_bytes,
-            file_name=filename,
-            mime="application/pdf",
-            key="download_chat_pdf"
-        )
-        # except Exception as e:
-        #     st.sidebar.error(f"Error generating PDF: {str(e)}")
+        try:
+            pdf_bytes, filename = chatbot_utils.generate_chat_pdf()
+            st.sidebar.download_button(
+                label="📄 Download Chat as PDF",
+                data=pdf_bytes,
+                file_name=filename,
+                mime="application/pdf",
+                key="download_chat_pdf"
+            )
+        except Exception as e:
+            st.sidebar.error(f"Error generating PDF: {str(e)}")
     else:
         st.sidebar.info("Start a conversation to enable PDF download")
 
@@ -118,12 +121,13 @@ def main():
     uploaded_image = st.file_uploader(
         "Upload an image (optional)",
         type=["png", "jpg", "jpeg"],
-        key="image_uploader_chatbot"
+        key=f"image_uploader_chatbot_{st.session_state['chatbot_image_uploader_id']}",
     )
 
     # Display the uploaded image if available
     if uploaded_image is not None:
-        st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
+        with chatbot_container:
+            st.image(uploaded_image, caption="Uploaded Image")
         st.session_state["chatbot_uploaded_image"] = chatbot_utils.get_image_base64(uploaded_image)
 
     # Display chat messages from history on app rerun
@@ -152,6 +156,8 @@ def main():
         if st.session_state["chatbot_uploaded_image"] is not None:
             body["image"] = st.session_state.pop("chatbot_uploaded_image")
             st.session_state["chatbot_uploaded_image"] = None
+            st.session_state["chatbot_image_uploader_id"] += 1
+            uploaded_image.close()
 
         # Call chatbot
         response = chatbot_utils.call_chatbot(

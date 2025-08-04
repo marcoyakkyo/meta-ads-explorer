@@ -24,7 +24,7 @@ def get_image_base64(uploaded_file) -> Union[str, None]:
 
 
 def call_chatbot(url: str, params: Dict[str, Any]=None, body: Dict[str, Any]=None) -> Union[dict, None]:
-    print(f"Calling {url} with params: {params} and body: {body}")
+    print(f"Calling {url} with params: {params.keys() if params else None} and body: {body.keys() if body else None}")
     try:
         response = requests.post(url, params=params, json=body, headers=CHATBOT_HEADERS)
 
