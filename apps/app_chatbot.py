@@ -150,6 +150,7 @@ def main():
             "user_query": user_input,
             "sessionId": st.session_state["chatbot_sessionId"],
             "is_test_chat": config.IS_DEBUG,
+            "model": st.secrets.get('chatbot_model', 'gpt-4.1-mini' if config.IS_DEBUG else 'gpt-4.1'),
         }
 
         # Add image to body if available
