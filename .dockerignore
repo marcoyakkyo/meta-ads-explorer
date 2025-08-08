@@ -1,2 +1,10 @@
 chrome-extension/
+**/node_modules/
+**/__pycache__/
+tests/
+build/
+
+**/*.js
+**/*.html
+
 .gitignore

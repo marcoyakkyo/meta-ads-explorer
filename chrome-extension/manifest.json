@@ -1,36 +1,32 @@
 {
   "manifest_version": 3,
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
   "name": "FB Ad Saver",
   "version": "1.0",
   "description": "Inject Save buttons into Facebook Ad Library",
-  "permissions": [
-    "activeTab",
-    "storage",
-    "scripting"
-  ],
   "options_ui": {
-    "page": "options.html",
+    "page": "./option/options.html",
     "open_in_tab": true
   },
   "host_permissions": [
-    "https://www.facebook.com/ads/library/*",
-    "https://www.facebook.com/api/graphql/*",
-    "https://mcp-test.yakkyo.com/meta-ads/*"
+    "*://*.facebook.com/ads/library/*",
+    "*://*.facebook.com/api/graphql/*",
+    "*://*.yakkyo.com/meta-ads/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "./background.js"
   },
   "content_scripts": [
     {
       "matches":  ["*://*.facebook.com/ads/library/*"],
-      "js": ["content.js"],
+      "js": [
+        "./content_builded.js"
+      ],
       "run_at": "document_start"
-    },
-    {
-      "matches":  ["*://*.facebook.com/*"],
-      "js": ["inject.js"],
-      "run_at": "document_start",
-      "world": "MAIN"
     }
   ]
 }

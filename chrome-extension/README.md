@@ -1,3 +1,12 @@
+# Install (https://www.extend-chrome.dev/rollup-plugin#usage)
+
+npm install esbuild --save-dev
+
+npx esbuild ./content.js --bundle --minify --outfile=./content_builded.js
+
+For more information, see 'build_extension.sh'.
+
+
 # FB Ad Saver Chrome Extension
 
 This Chrome extension allows users to save Facebook ads from the Ad Library with custom tags for better organization.
