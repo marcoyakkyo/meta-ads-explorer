@@ -1,5 +1,5 @@
 #!/bin/bash
-# RUN THIS SCRIPT WITH 'sh build_extension.sh'
+# RUN THIS SCRIPT WITH 'bash build_extension.sh'
 
 rm -rf ./build ads-meta-chrome-ext.zip > /dev/null 2>&1
 mkdir -p ./build > /dev/null 2>&1
@@ -7,43 +7,40 @@ mkdir -p ./build > /dev/null 2>&1
 echo "Building content script..."
 
 # Ensure esbuild is installed
-is_installed=$(npm list | grep -c esbuild)
+if [ $(npm list | grep -c esbuild) -eq 0 ]; then
+    echo "esbuild is not installed. Try with 'npm install esbuild --save-dev'"
+    exit 1
+fi
 
-if [ $is_installed -eq 0 ]; then
-    echo "esbuild is not installed. Installing..."
-    # npm install esbuild --save-dev
+files=(
+    "background.js"
+    "content.js"
+    "inject.js"
+    "option/options.js"
+)
+
+echo "Using esbuild to bundle and minify $files (with --minify)"
+
+for file in "${files[@]}"; do
+    echo "Processing $file..."
+    npx esbuild "./chrome-extension/$file" --bundle --minify --outfile="./build/$file" --platform=browser
     if [ $? -ne 0 ]; then
-        echo "Failed to install esbuild. Please install it manually."
+        echo "Failed to build $file."
         exit 1
     fi
-fi
-
-echo "Using esbuild to bundle and minify content.js...  with --minify"
-npx esbuild ./chrome-extension/content.js --bundle  --outfile=./build/content_builded.js
-
-if [ $? -ne 0 ]; then
-    echo "Failed to build content script."
-    exit 1
-fi
-
-if [ -f ./build/content_builded.js ]; then
-    echo "Content script built successfully."
-else
-    echo "Failed to build content script."
-    exit 1
-fi
+done
 
 # zip the relevant files to create a Chrome extension package
 echo "Creating Chrome extension package into build directory..."
 
+echo "-----------------"
+echo "zipping the build directory to ads-meta-chrome-ext.zip..."
 
-echo "\n-----------------\nzipping the build directory to ads-meta-chrome-ext.zip..."
-cp -r ./chrome-extension/manifest.json \
-    ./chrome-extension/option \
-    ./chrome-extension/background.js \
-    ./chrome-extension/inject.js \
+cp ./chrome-extension/manifest.json \
     ./chrome-extension/README.md \
     build/
+
+cp ./chrome-extension/option/options.html ./build/option/options.html
 
 zip -r ads-meta-chrome-ext.zip ./build/*
 
@@ -52,11 +49,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "\n-----------------------\n"
+echo ""
+echo "-----------------------"
 echo "Chrome extension package created successfully:"
 echo "ads-meta-chrome-ext.zip of size $(du -sh ads-meta-chrome-ext.zip | cut -f1)"
 echo "build of size $(du -sh ./build | cut -f1)"
-echo "use the build folder to load unpacked extension in Chrome"
-echo "Remember to put the relevant credentials in the option page of the extension!"
+echo ""
 
-# rm -rf ./content_builded.js > /dev/null 2>&1
+echo "Use the build folder to load unpacked extension in Chrome"
+echo "Remember to put the relevant credentials in the option page of the extension!"
