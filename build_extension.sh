@@ -1,6 +1,8 @@
 #!/bin/bash
 # RUN THIS SCRIPT WITH 'bash build_extension.sh'
 
+APPLY_MINIFY=false
+
 rm -rf ./build ads-meta-chrome-ext.zip > /dev/null 2>&1
 mkdir -p ./build > /dev/null 2>&1
 
@@ -23,7 +25,13 @@ echo "Using esbuild to bundle and minify $files (with --minify)"
 
 for file in "${files[@]}"; do
     echo "Processing $file..."
-    npx esbuild "./chrome-extension/$file" --bundle --minify --outfile="./build/$file" --platform=browser
+
+    if [ "$APPLY_MINIFY" = true ]; then
+        npx esbuild "./chrome-extension/$file" --bundle --minify --outfile="./build/$file" --platform=browser
+    else
+        npx esbuild "./chrome-extension/$file" --bundle --outfile="./build/$file" --platform=browser
+    fi
+
     if [ $? -ne 0 ]; then
         echo "Failed to build $file."
         exit 1

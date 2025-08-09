@@ -13,6 +13,7 @@ function getApiToken() {
         }
         api_token = apiToken;
         console.log('API token set to a string of size', api_token.length);
+        return true;
     });
 }
 
@@ -26,6 +27,7 @@ function getBackendUrl() {
         }
         backendUrl = url;
         console.log('Backend URL set to a string of size', backendUrl.length);
+        return true;
     });
 }
 
@@ -89,7 +91,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!api_token || !backendUrl) {
         getApiToken();
         getBackendUrl();
-        if (!api_token || !backendUrl) {
+        if (!api_token || ! backendUrl) {
             console.error('Invalid configuration, go to the options page and try again.');
             sendResponse({ success: false, error: 'Invalid configuration, go to the  options page and try again.'});
             return true; // Keep the message channel open for async response
@@ -110,7 +112,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         })
         .then(res => res.json())
         .then(data => {sendResponse({ success: true, ads: data.ads, tags: data.tags || [], error: data.error ? data.error : null });})
-        .catch(err => sendResponse({ success: false, ads: null, tags: null, error: err.message }));
+        .catch(err => sendResponse({ success: false, ads: [], tags: [], error: err.message }));
     }
 
     else if (msg.type === 'SAVE_AD') {
@@ -121,7 +123,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             imgUrl: msg.imgUrl || null, // optional image URL
             query_params: msg.query_params || {},
             full_html_text: msg.full_text || '', // optional full text of the ad
-            tags: msg.tags || [] // optional tags array
+            tags: msg.tags || [] 
         };
 
         // Check if we have intercepted data for this ad, try with both int and string type
@@ -158,7 +160,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             headers: { 'Content-Type': 'application/json', 'x-api-key': `${api_token}` },
             body: JSON.stringify({ 
                 adId: msg.adId,
-                tags: msg.tags || [] // Ensure tags is always an array
+                tags: msg.tags || []
             })
         })
         .then(res => res.json())

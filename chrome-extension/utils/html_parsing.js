@@ -189,6 +189,7 @@ async function findAdCards() {
   let targetButtons = 0;
   
   for (const button of allButtons) {
+  
     const text = button.textContent.trim();
 
     if (text.includes('See ad details') || text.includes('See summary details') || text.includes('Vedi i dettagli di riepilogo') || text.includes("Vedi dettagli dell'inserzione")) {
@@ -227,29 +228,28 @@ async function findAdCards() {
         imgUrl = await findImgSrc(adCardElement, adId);
       }
 
-      let obj = {
+      let card = {
         adId: adId, 
         element: adCardElement,
         isSaved: false,
         btn: null,
         videoUrl: null,
         posterUrl: null,
-        imgUrl: imgUrl
+        imgUrl: imgUrl,
+        selectedTagsDiv: null,
+        tagsListDiv: null,
+        tagDropdown: null,
+        tags: new Set() // Initialize tags as an empty set
       };
 
-      if (imgUrl) {
-        obj.imgUrl = imgUrl;
-      }
       if (video_stuff) {
-        obj.videoUrl = video_stuff.videoUrl;
-        obj.posterUrl = video_stuff.posterUrl;
+        card.videoUrl = video_stuff.videoUrl;
+        card.posterUrl = video_stuff.posterUrl;
       }
 
-      adCards.push(obj);
-
+      adCards.push(card);
     }
   }
-  return adCards;
 }
 
 export { findAdCards} ;
