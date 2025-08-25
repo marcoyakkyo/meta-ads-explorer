@@ -1,7 +1,7 @@
 import streamlit as st
 from bson.objectid import ObjectId
 
-from src import config, chatbot_utils, mongo
+from src import config, chatbot_utils, mongo, chat_stream
 
 # ---------------------------- APP INTERFACE ----------------------------
 def main():
@@ -25,7 +25,15 @@ def main():
     if "chatbot_image_uploader_id" not in st.session_state:
         st.session_state["chatbot_image_uploader_id"] = 0
 
+    if "chatbot_stream" not in st.session_state:
+        st.session_state["chatbot_stream"] = False
+
     # ---------------------------- CHATBOT INTERFACE ----------------------------
+
+    # add a checkbox to toggle streaming mode
+    if st.sidebar.checkbox("Streaming Mode", value=st.session_state["chatbot_stream"], key="checkbox_streaming_mode"):
+        st.session_state["chatbot_stream"] = True
+        st.sidebar.success("Streaming Mode Enabled")
 
     # add a button to rest sessionId and chat history
     if st.sidebar.button("New Chat", key="new_chat_button"):
@@ -160,29 +168,42 @@ def main():
             st.session_state["chatbot_image_uploader_id"] += 1
             uploaded_image.close()
 
-        # Call chatbot
-        response = chatbot_utils.call_chatbot(
-            st.secrets['chatbot_webhook_url'],
-            body=body
-        )
 
-        # Handle response
-        chatbot_message = response["messages"][-1]["content"] if response else "Sorry, an error occurred. Please try again refreshing the app."
-        print(f"chatbot_message from chatbot: {chatbot_message} - sessionId: {st.session_state['chatbot_sessionId']}")
+        # Call chatbot
+        if st.session_state.get("chatbot_stream", True):
+            response = chat_stream.call_chatbot_stream(
+                st.secrets['chatbot_webhook_url'] + "/stream",
+                body=body,
+                chatbot_container=chatbot_container
+            )
+        else:
+            response = chatbot_utils.call_chatbot(
+                st.secrets['chatbot_webhook_url'],
+                body=body
+            )
 
         # parse the tool calls within the response
         if response:
+
+            if not st.session_state.get("chatbot_stream", True):
+                with chatbot_container:
+                    st.chat_message("assistant").markdown(response["messages"][-1]["content"])
+    
             st.session_state["chatbot_messages"].extend(response["messages"])
 
             messages_tool_calls = chatbot_utils.parse_tool_calls(response["messages"])
             if messages_tool_calls:
                 st.session_state["chatbot_tool_calls"].extend(messages_tool_calls)
                 print(f"Tool calls added to session {len(messages_tool_calls)}:\n{messages_tool_calls}\n")
-        else:
-            st.session_state["chatbot_messages"].append({"role": "assistant", "content": chatbot_message})
 
-        # Display assistant chatbot_message in chat message container
-        with chatbot_container:
-            st.chat_message("assistant").markdown(chatbot_message)
+        else:
+            st.session_state["chatbot_messages"].append({
+                "role": "assistant",
+                "content": "Sorry, an error occurred. Please try again refreshing the app."
+            })
+
+            # Display assistant chatbot_message in chat message container
+            with chatbot_container:
+                st.chat_message("assistant").markdown("Sorry, an error occurred. Please try again refreshing the app.")
 
         st.rerun()
