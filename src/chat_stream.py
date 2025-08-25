@@ -23,55 +23,67 @@ def call_chatbot_stream(url: str, params: Dict[str, Any]=None, body: Dict[str, A
             return None
 
         content_buffer = ""
+        final_data = None
 
-        # Display assistant chatbot_message in chat message container
-        with chatbot_container:
+        def stream_generator():
+            nonlocal content_buffer, final_data
             
             for line in response.iter_lines():
                 if line:
                     # Decode the line
                     decoded_line = line.decode('utf-8')
-                    
                     # Skip empty lines and non-data lines
                     if not decoded_line.startswith('data: '):
                         continue
-                    
                     # Extract JSON data
                     try:
                         data_str = decoded_line[6:]  # Remove 'data: ' prefix
                         if data_str.strip():
                             data = json.loads(data_str)
-                            
                             print(f"\n[STREAM DATA] {json.dumps(data, indent=2)}")
-
                             # Handle different message types
                             if data.get('type') == 'init':
-                                st.chat_message("assistant").markdown(f"[INIT] {data.get('message', '')}")
-                                
+                                yield f"[INIT] {data.get('message', '')}\n\n"
                             elif data.get('type') == 'content':
                                 content_chunk = data.get('chunk', '')
                                 content_buffer += content_chunk
-                                st.chat_message("assistant").markdown(content_chunk)
-
+                                yield content_chunk
                             elif data.get('type') == 'tool_start':
-                                st.chat_message("assistant").markdown(f"\n[TOOL START] {data.get('tool_name', '')}")
-                                
+                                yield f"\n\n[TOOL START] {data.get('tool_name', '')}\n\n"
                             elif data.get('type') == 'tool_end':
-                                st.chat_message("assistant").markdown(f"\n[TOOL END] {data.get('tool_name', '')}")
-                                
+                                yield f"\n\n[TOOL END] {data.get('tool_name', '')}\n\n"
                             elif data.get('type') == 'complete':
-                                st.chat_message("assistant").markdown(f"\n\n[COMPLETE] Token usage: {data.get('token_usage', [])}")
-                                return data
-
+                                final_data = data
+                                yield f"\n\n[COMPLETE] Token usage: {data.get('token_usage', [])}"
+                                return
                             elif not data.get('success', True):
-                                st.chat_message("assistant").markdown(f"\n[ERROR] {data.get('error', 'Unknown error')}")
-                                break
-
+                                yield f"\n\n[ERROR] {data.get('error', 'Unknown error')}"
+                                return
                     except json.JSONDecodeError as e:
                         print(f"\n[JSON ERROR] {e}: {decoded_line}")
                         continue
 
-        return []
+        # Display assistant chatbot_message in chat message container using st.write_stream
+        with chatbot_container:
+            st.write_stream(stream_generator())
+            
+            # Return the structured response after streaming is complete
+            if final_data and final_data.get('type') == 'complete':
+                return {
+                    "messages": [
+                        {"role": "assistant", "content": content_buffer}
+                    ],
+                    "token_usage": final_data.get('token_usage', [])
+                }, final_data
+        
+        # If we get here without a complete response, return the accumulated content
+        if content_buffer:
+            return {
+                "messages": [
+                    {"role": "assistant", "content": content_buffer}
+                ]
+            }, final_data
+        return None
 
     except Exception as e:
         print(f"Error calling {url}: {e}")

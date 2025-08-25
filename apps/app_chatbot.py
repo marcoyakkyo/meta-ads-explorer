@@ -151,6 +151,7 @@ def main():
         with chatbot_container:
             st.chat_message("user").markdown(user_input)
 
+        # Add user message to session state
         st.session_state["chatbot_messages"].append({"role": "user", "content": user_input})
 
         # Prepare request params and body
@@ -171,7 +172,7 @@ def main():
 
         # Call chatbot
         if st.session_state.get("chatbot_stream", True):
-            response = chat_stream.call_chatbot_stream(
+            response, data = chat_stream.call_chatbot_stream(
                 st.secrets['chatbot_webhook_url'] + "/stream",
                 body=body,
                 chatbot_container=chatbot_container
@@ -184,26 +185,30 @@ def main():
 
         # parse the tool calls within the response
         if response:
-
             if not st.session_state.get("chatbot_stream", True):
+                # For non-streaming mode, display the assistant message
                 with chatbot_container:
                     st.chat_message("assistant").markdown(response["messages"][-1]["content"])
-    
-            st.session_state["chatbot_messages"].extend(response["messages"])
-
-            messages_tool_calls = chatbot_utils.parse_tool_calls(response["messages"])
+                st.session_state["chatbot_messages"].extend(response["messages"])
+                messages_tool_calls = chatbot_utils.parse_tool_calls(response.get("messages", []))
+            else:
+                # For streaming mode, only add the assistant message to session state
+                # (it was already displayed during streaming)
+                if response.get("messages"):
+                    st.session_state["chatbot_messages"].extend(data["messages"])
+                messages_tool_calls = chatbot_utils.parse_tool_calls(data.get("messages", []))
+                
             if messages_tool_calls:
                 st.session_state["chatbot_tool_calls"].extend(messages_tool_calls)
                 print(f"Tool calls added to session {len(messages_tool_calls)}:\n{messages_tool_calls}\n")
-
+            # Only rerun after the full response is processed (not during streaming)
+            st.rerun()
         else:
             st.session_state["chatbot_messages"].append({
                 "role": "assistant",
                 "content": "Sorry, an error occurred. Please try again refreshing the app."
             })
-
             # Display assistant chatbot_message in chat message container
             with chatbot_container:
                 st.chat_message("assistant").markdown("Sorry, an error occurred. Please try again refreshing the app.")
-
-        st.rerun()
+            st.rerun()
