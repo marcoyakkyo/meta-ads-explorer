@@ -145,3 +145,13 @@ def get_history_chats(limit: int = 12, skip: int = 0) -> list:
 
     print(f"Fetched {len(sessions)} chatbot sessions from MongoDB. Skip: {skip}, Limit: {limit}")
     return sessions
+
+
+def delete_chat_session(session_id: str) -> bool:
+    try:
+        res = client["gigi_chatbot_sessions"].delete_one({"_id": ObjectId(session_id)})
+        print(f"Deleted chatbot session {session_id}")
+        return True if res.deleted_count > 0 else False
+    except Exception as e:
+        print(f"Error deleting chatbot session: {str(e)}")
+        return False
